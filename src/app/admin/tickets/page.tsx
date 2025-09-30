@@ -1,7 +1,22 @@
-import Header from '@/components/Header'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { Ticket, QrCode, CheckCircle, XCircle, Clock, User, Calendar } from 'lucide-react'
+import Link from 'next/link'
+import { 
+  Ticket, 
+  QrCode, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  User, 
+  Calendar, 
+  Search, 
+  Filter, 
+  Download, 
+  Eye, 
+  ArrowLeft,
+  TrendingUp,
+  DollarSign
+} from 'lucide-react'
 
 export default async function AdminTicketsPage() {
   const { userId } = await auth()
@@ -37,229 +52,344 @@ export default async function AdminTicketsPage() {
     },
     {
       id: 'ticket_2',
-      orderId: 'order_1',
+      orderId: 'order_2',
       eventId: '1',
       eventTitle: 'Summer Music Festival 2025',
       eventDate: '2025-07-15',
-      userId: 'user_123',
-      userName: 'John Doe',
-      userEmail: 'john@example.com',
-      ticketType: 'General Admission',
-      price: 75,
-      status: 'USED',
-      qrCode: 'QR67890FGHIJ',
-      purchaseDate: '2025-01-10T10:00:00Z',
-      usedAt: '2025-07-15T18:30:00Z'
-    },
-    {
-      id: 'ticket_3',
-      orderId: 'order_2',
-      eventId: '2',
-      eventTitle: 'Rock Concert Extravaganza',
-      eventDate: '2025-08-20',
       userId: 'user_456',
       userName: 'Jane Smith',
       userEmail: 'jane@example.com',
-      ticketType: 'VIP',
-      price: 65,
+      ticketType: 'VIP Access',
+      price: 150,
+      status: 'USED',
+      qrCode: 'QR67890FGHIJ',
+      purchaseDate: '2025-01-08T14:30:00Z',
+      usedAt: '2025-07-15T18:00:00Z'
+    },
+    {
+      id: 'ticket_3',
+      orderId: 'order_3',
+      eventId: '2',
+      eventTitle: 'Tech Conference 2025',
+      eventDate: '2025-05-20',
+      userId: 'user_789',
+      userName: 'Bob Wilson',
+      userEmail: 'bob@example.com',
+      ticketType: 'Early Bird',
+      price: 180,
       status: 'PURCHASED',
-      qrCode: 'QR11111KLMNO',
-      purchaseDate: '2025-01-12T14:30:00Z',
+      qrCode: 'QR11111KKKKK',
+      purchaseDate: '2025-01-05T09:15:00Z',
       usedAt: null
     },
     {
       id: 'ticket_4',
-      orderId: 'order_3',
+      orderId: 'order_4',
+      eventId: '3',
+      eventTitle: 'Jazz Night Special',
+      eventDate: '2025-09-10',
+      userId: 'user_101',
+      userName: 'Alice Brown',
+      userEmail: 'alice@example.com',
+      ticketType: 'Premium',
+      price: 65,
+      status: 'REFUNDED',
+      qrCode: 'QR22222LLLLL',
+      purchaseDate: '2025-01-07T16:45:00Z',
+      usedAt: null
+    },
+    {
+      id: 'ticket_5',
+      orderId: 'order_5',
       eventId: '1',
       eventTitle: 'Summer Music Festival 2025',
       eventDate: '2025-07-15',
-      userId: 'user_789',
-      userName: 'Bob Johnson',
-      userEmail: 'bob@example.com',
-      ticketType: 'Early Bird',
-      price: 45,
+      userId: 'user_202',
+      userName: 'Charlie Davis',
+      userEmail: 'charlie@example.com',
+      ticketType: 'Student',
+      price: 50,
       status: 'CANCELLED',
-      qrCode: 'QR22222PQRST',
-      purchaseDate: '2025-01-08T09:15:00Z',
+      qrCode: 'QR33333MMMMM',
+      purchaseDate: '2025-01-12T11:20:00Z',
       usedAt: null
     }
   ]
 
+  // Calculate statistics
   const totalTickets = tickets.length
-  const purchasedTickets = tickets.filter(t => t.status === 'PURCHASED')
-  const usedTickets = tickets.filter(t => t.status === 'USED')
-  const cancelledTickets = tickets.filter(t => t.status === 'CANCELLED')
+  const usedTickets = tickets.filter(t => t.status === 'USED').length
+  const purchasedTickets = tickets.filter(t => t.status === 'PURCHASED').length
+  const refundedTickets = tickets.filter(t => t.status === 'REFUNDED').length
+  const totalRevenue = tickets
+    .filter(t => t.status === 'PURCHASED' || t.status === 'USED')
+    .reduce((sum, ticket) => sum + ticket.price, 0)
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PURCHASED': return <Clock className="h-4 w-4" />
+      case 'USED': return <CheckCircle className="h-4 w-4" />
+      case 'REFUNDED': return <XCircle className="h-4 w-4" />
+      case 'CANCELLED': return <XCircle className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const baseClasses = "px-3 py-1 text-xs font-medium rounded-full border"
+    switch (status) {
+      case 'PURCHASED':
+        return `${baseClasses} bg-blue-400 bg-opacity-20 text-blue-300 border-blue-400`
+      case 'USED':
+        return `${baseClasses} bg-green-400 bg-opacity-20 text-green-300 border-green-400`
+      case 'REFUNDED':
+        return `${baseClasses} bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400`
+      case 'CANCELLED':
+        return `${baseClasses} bg-red-400 bg-opacity-20 text-red-300 border-red-400`
+      default:
+        return `${baseClasses} bg-gray-400 bg-opacity-20 text-gray-300 border-gray-400`
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Tickets Management</h1>
-          <p className="mt-2 text-gray-600">Track and manage all event tickets</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20 -z-10"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <Ticket className="h-8 w-8 text-blue-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{totalTickets}</p>
+              <Link
+                href="/admin"
+                className="mr-6 p-3 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-all duration-200"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Link>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                  Ticket
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                    {' '}Management
+                  </span>
+                </h1>
+                <p className="text-xl text-gray-200">Monitor and manage all ticket transactions</p>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Valid Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{purchasedTickets.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <QrCode className="h-8 w-8 text-purple-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Used Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{usedTickets.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cancelled Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{cancelledTickets.length}</p>
-              </div>
+            <div className="flex gap-3">
+              <button className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 flex items-center shadow-lg">
+                <Download className="h-5 w-5 mr-2" />
+                Export
+              </button>
+              <Link
+                href="/admin/scan"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center shadow-lg"
+              >
+                <QrCode className="h-5 w-5 mr-2" />
+                Scan Tickets
+              </Link>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tickets Table */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">All Tickets</h2>
+      <div className="relative -mt-8 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <Ticket className="h-10 w-10 text-blue-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Total Tickets</p>
+                  <p className="text-3xl font-bold text-white">{totalTickets}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <CheckCircle className="h-10 w-10 text-green-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Used</p>
+                  <p className="text-3xl font-bold text-white">{usedTickets}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <Clock className="h-10 w-10 text-yellow-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Active</p>
+                  <p className="text-3xl font-bold text-white">{purchasedTickets}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <XCircle className="h-10 w-10 text-red-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Refunded</p>
+                  <p className="text-3xl font-bold text-white">{refundedTickets}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <DollarSign className="h-10 w-10 text-purple-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Revenue</p>
+                  <p className="text-3xl font-bold text-white">${totalRevenue}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ticket ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Event
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type & Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Purchase Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {ticket.id}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        QR: {ticket.qrCode}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {ticket.userName}
+
+          {/* Search and Filters */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by ticket ID, user name, or email..."
+                    className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <select className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm">
+                  <option value="" className="bg-gray-800">All Status</option>
+                  <option value="PURCHASED" className="bg-gray-800">Purchased</option>
+                  <option value="USED" className="bg-gray-800">Used</option>
+                  <option value="REFUNDED" className="bg-gray-800">Refunded</option>
+                  <option value="CANCELLED" className="bg-gray-800">Cancelled</option>
+                </select>
+                <select className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm">
+                  <option value="" className="bg-gray-800">All Events</option>
+                  <option value="1" className="bg-gray-800">Summer Music Festival</option>
+                  <option value="2" className="bg-gray-800">Tech Conference</option>
+                  <option value="3" className="bg-gray-800">Jazz Night</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Tickets Table */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-white/5">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Ticket Info
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Event
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Purchase Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {tickets.map((ticket) => (
+                    <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                              <Ticket className="h-5 w-5 text-white" />
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">{ticket.userEmail}</div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-white">
+                              {ticket.id}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {ticket.ticketType}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{ticket.eventTitle}</div>
-                        <div className="text-sm text-gray-500">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-white">{ticket.eventTitle}</div>
+                        <div className="text-sm text-gray-400">
                           {new Date(ticket.eventDate).toLocaleDateString()}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{ticket.ticketType}</div>
-                        <div className="text-sm text-gray-500">${ticket.price}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        ticket.status === 'PURCHASED'
-                          ? 'bg-green-100 text-green-800'
-                          : ticket.status === 'USED'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {ticket.status}
-                      </span>
-                      {ticket.usedAt && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Used: {new Date(ticket.usedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-white">{ticket.userName}</div>
+                        <div className="text-sm text-gray-400">{ticket.userEmail}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
+                        ${ticket.price}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={getStatusBadge(ticket.status)}>
+                          <span className="flex items-center">
+                            {getStatusIcon(ticket.status)}
+                            <span className="ml-1">{ticket.status}</span>
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {new Date(ticket.purchaseDate).toLocaleDateString()}
+                        <div className="text-xs text-gray-400">
+                          {new Date(ticket.purchaseDate).toLocaleTimeString()}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(ticket.purchaseDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                         <button
-                          className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                          className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
                           title="View QR Code"
                         >
                           <QrCode className="h-4 w-4" />
                         </button>
                         <button
-                          className="text-purple-600 hover:text-purple-900 p-1 hover:bg-purple-50 rounded"
-                          title="View Details"
+                          className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                          title="Download"
                         >
-                          <User className="h-4 w-4" />
+                          <Download className="h-4 w-4" />
                         </button>
-                        {ticket.status === 'PURCHASED' && (
-                          <button
-                            className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                            title="Mark as Used"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {tickets.length === 0 && (
+            <div className="text-center py-16">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 max-w-md mx-auto">
+                <Ticket className="h-20 w-20 text-gray-400 mx-auto mb-6" />
+                <h3 className="text-2xl font-semibold text-white mb-3">No tickets found</h3>
+                <p className="text-gray-300 mb-6">Tickets will appear here as customers make purchases.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

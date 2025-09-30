@@ -1,36 +1,94 @@
-import { requireAdmin } from '@/lib/clerk-auth'
-import connectDB from '@/lib/database'
-import { Event, Order, Ticket, User } from '@/lib/schemas'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Calendar, Ticket as TicketIcon, DollarSign, Plus, Settings } from 'lucide-react'
+import { Plus, Settings, Calendar, Ticket as TicketIcon, DollarSign, Users, BarChart3, TrendingUp } from 'lucide-react'
 
 export default async function AdminDashboard() {
-  const user = await requireAdmin()
+  const { userId } = await auth()
   
-  // Mock data for now - replace with actual MongoDB queries
-  const totalUsers = 0
-  const totalEvents = 0 
-  const totalOrders = 0
-  const totalTickets = 0
+  if (!userId) {
+    redirect('/sign-in')
+  }
 
-  const totalRevenue = 0 // TODO: Calculate from orders
-  const upcomingEvents = 0 // TODO: Count upcoming events
-  const recentEvents = [] // TODO: Fetch recent events
-  const recentOrders = [] // TODO: Fetch recent orders
+  const clerk = await clerkClient()
+  const user = await clerk.users.getUser(userId)
+  
+  if (user.publicMetadata?.role !== 'admin') {
+    redirect('/')
+  }
+
+  // Mock data for immediate display
+  const stats = {
+    totalUsers: 1247,
+    totalEvents: 8,
+    totalOrders: 342,
+    totalTickets: 756,
+    totalRevenue: 45680.50,
+    upcomingEvents: 3
+  }
+
+  const recentEvents = [
+    {
+      id: '1',
+      title: 'Summer Music Festival 2025',
+      date: '2025-07-15',
+      venue: 'Central Park Amphitheater',
+      status: 'PUBLISHED'
+    },
+    {
+      id: '2',
+      title: 'Rock Concert Extravaganza',
+      date: '2025-08-20',
+      venue: 'Madison Square Garden',
+      status: 'PUBLISHED'
+    },
+    {
+      id: '3',
+      title: 'Jazz Night Special',
+      date: '2025-10-05',
+      venue: 'Blue Note',
+      status: 'DRAFT'
+    }
+  ]
+
+  const recentOrders = [
+    {
+      id: '1',
+      event: { title: 'Summer Music Festival 2025' },
+      user: { name: 'John Doe', email: 'john@example.com' },
+      total: 150.00,
+      status: 'CONFIRMED',
+      createdAt: '2025-09-28T10:00:00Z'
+    },
+    {
+      id: '2',
+      event: { title: 'Rock Concert Extravaganza' },
+      user: { name: 'Jane Smith', email: 'jane@example.com' },
+      total: 130.00,
+      status: 'PENDING',
+      createdAt: '2025-09-29T14:30:00Z'
+    }
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20 -z-10"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {session.user.name}</p>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                Admin
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                  {' '}Dashboard
+                </span>
+              </h1>
+              <p className="text-xl text-gray-200">Welcome back, {user.firstName || user.emailAddresses[0]?.emailAddress.split('@')[0]}</p>
             </div>
             <Link
               href="/"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center shadow-lg"
             >
               Back to Site
             </Link>
@@ -38,206 +96,226 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative -mt-8 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-12">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-500" />
+              <Users className="h-10 w-10 text-blue-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
-                <p className="text-xs text-gray-500">
-                  {usersByRole.find(r => r.role === 'ADMIN')?._count.role || 0} Admins, {' '}
-                  {usersByRole.find(r => r.role === 'USER')?._count.role || 0} Users
-                </p>
+                <p className="text-sm font-medium text-gray-300">Total Users</p>
+                <p className="text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                  <span className="text-xs text-green-400">+12% this month</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
             <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-green-500" />
+              <Calendar className="h-10 w-10 text-green-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Events</p>
-                <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
-                <p className="text-xs text-gray-500">{upcomingEvents} upcoming</p>
+                <p className="text-sm font-medium text-gray-300">Total Events</p>
+                <p className="text-3xl font-bold text-white">{stats.totalEvents}</p>
+                <p className="text-xs text-gray-400">{stats.upcomingEvents} upcoming</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
             <div className="flex items-center">
-              <Ticket className="h-8 w-8 text-purple-500" />
+              <TicketIcon className="h-10 w-10 text-purple-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
-                <p className="text-xs text-gray-500">{totalTickets} tickets sold</p>
+                <p className="text-sm font-medium text-gray-300">Total Orders</p>
+                <p className="text-3xl font-bold text-white">{stats.totalOrders}</p>
+                <p className="text-xs text-gray-400">{stats.totalTickets} tickets sold</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-yellow-500" />
+              <DollarSign className="h-10 w-10 text-yellow-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
-                <p className="text-xs text-gray-500">From {confirmedOrders.length} confirmed orders</p>
+                <p className="text-sm font-medium text-gray-300">Total Revenue</p>
+                <p className="text-3xl font-bold text-white">${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                  <span className="text-xs text-green-400">+8% this month</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
             <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-indigo-500" />
+              <Calendar className="h-10 w-10 text-indigo-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Upcoming Events</p>
-                <p className="text-2xl font-bold text-gray-900">{upcomingEvents}</p>
-                <p className="text-xs text-gray-500">Published & future</p>
+                <p className="text-sm font-medium text-gray-300">Upcoming Events</p>
+                <p className="text-3xl font-bold text-white">{stats.upcomingEvents}</p>
+                <p className="text-xs text-gray-400">Published & future</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+            <div className="flex items-center">
+              <TicketIcon className="h-10 w-10 text-pink-400" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-300">Tickets Sold</p>
+                <p className="text-3xl font-bold text-white">{stats.totalTickets}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                  <span className="text-xs text-green-400">+15% this week</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              href="/admin/events/create"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-            >
-              <Plus className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Create Event</span>
-            </Link>
-
-            <Link
-              href="/admin/events"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-            >
-              <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Manage Events</span>
-            </Link>
-
-            <Link
-              href="/admin/content/homepage"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
-            >
-              <Settings className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Homepage Content</span>
-            </Link>
-
-
-
-            <Link
-              href="/admin/content/past-events"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors"
-            >
-              <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Past Events</span>
-            </Link>
-
-            <Link
-              href="/admin/scan"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors"
-            >
-              <Ticket className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Scan QR Codes</span>
-            </Link>
-
-            <Link
-              href="/admin/orders"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors"
-            >
-              <DollarSign className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">View Orders</span>
-            </Link>
-
-            <Link
-              href="/admin/users"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors"
-            >
-              <Users className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Manage Users</span>
-            </Link>
-
-            <Link
-              href="/admin/analytics"
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
-            >
-              <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-              <span className="text-gray-700">Analytics</span>
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Recent Events */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Recent Events</h2>
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Recent Events</h2>
               <Link
                 href="/admin/events"
-                className="text-blue-600 hover:text-blue-700 text-sm"
+                className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
               >
-                View All
+                View All →
               </Link>
             </div>
             <div className="space-y-4">
               {recentEvents.map((event) => (
-                <div key={event.id} className="flex justify-between items-center p-3 border border-gray-200 rounded">
+                <div key={event.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
                   <div>
-                    <h3 className="font-medium text-gray-900">{event.title}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-medium text-white">{event.title}</h3>
+                    <p className="text-sm text-gray-300">
                       {new Date(event.date).toLocaleDateString()} • {event.venue}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${event.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                    event.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                  <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
+                    event.status === 'PUBLISHED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                    event.status === 'DRAFT' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                    'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                  }`}>
                     {event.status}
                   </span>
                 </div>
               ))}
-              {recentEvents.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No events yet</p>
-              )}
             </div>
           </div>
 
           {/* Recent Orders */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Recent Orders</h2>
+              <Link
+                href="/admin/orders"
+                className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+              >
+                View All →
+              </Link>
             </div>
             <div className="space-y-4">
               {recentOrders.map((order) => (
-                <div key={order.id} className="flex justify-between items-center p-3 border border-gray-200 rounded">
+                <div key={order.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
                   <div>
-                    <h3 className="font-medium text-gray-900">{order.event.title}</h3>
-                    <p className="text-sm text-gray-600">{order.user.name || order.user.email}</p>
-                    <p className="text-xs text-gray-500">
+                    <h3 className="font-medium text-white">{order.event.title}</h3>
+                    <p className="text-sm text-gray-300">{order.user.name || order.user.email}</p>
+                    <p className="text-xs text-gray-400">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900">${order.total.toFixed(2)}</p>
-                    <span className={`px-2 py-1 text-xs rounded-full ${order.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                    <p className="font-medium text-white">${order.total.toFixed(2)}</p>
+                    <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
+                      order.status === 'CONFIRMED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                      order.status === 'PENDING' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                      'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                    }`}>
                       {order.status}
                     </span>
                   </div>
                 </div>
               ))}
-              {recentOrders.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No orders yet</p>
-              )}
             </div>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-xl">
+          <h2 className="text-2xl font-bold text-white mb-8">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link
+              href="/admin/events/create"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <Plus className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Create Event</span>
+            </Link>
+
+            <Link
+              href="/admin/events"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-green-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-green-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Manage Events</span>
+            </Link>
+
+            <Link
+              href="/admin/orders"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-purple-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <DollarSign className="h-6 w-6 mr-3 text-gray-400 group-hover:text-purple-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">View Orders</span>
+            </Link>
+
+            <Link
+              href="/admin/users"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-blue-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <Users className="h-6 w-6 mr-3 text-gray-400 group-hover:text-blue-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Manage Users</span>
+            </Link>
+
+            <Link
+              href="/admin/scan"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-yellow-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <TicketIcon className="h-6 w-6 mr-3 text-gray-400 group-hover:text-yellow-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Scan QR Codes</span>
+            </Link>
+
+            <Link
+              href="/admin/analytics"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-orange-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <BarChart3 className="h-6 w-6 mr-3 text-gray-400 group-hover:text-orange-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Analytics</span>
+            </Link>
+
+            <Link
+              href="/admin/content/homepage"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-indigo-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <Settings className="h-6 w-6 mr-3 text-gray-400 group-hover:text-indigo-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Homepage Content</span>
+            </Link>
+
+            <Link
+              href="/admin/content/past-events"
+              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+            >
+              <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
+              <span className="text-gray-300 group-hover:text-white font-medium">Past Events</span>
+            </Link>
+          </div>
+        </div>
         </div>
       </div>
     </div>
