@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, Download, Mail, Smartphone, Ticket, Calendar, MapPin } from 'lucide-react'
 import Header from '@/components/Header'
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const [sessionData, setSessionData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
@@ -152,5 +152,20 @@ export default function PaymentSuccess() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <Header />
+        <div className="flex items-center justify-center py-32">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
