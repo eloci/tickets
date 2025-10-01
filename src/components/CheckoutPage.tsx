@@ -332,7 +332,7 @@ export default function CheckoutPage({ orderId }: CheckoutProps) {
                   {order.tickets.map((ticket) => (
                     <div key={ticket.id} className="flex justify-between text-sm mb-1">
                       <span>{ticket.category.name}</span>
-                      <span>${ticket.category.price}</span>
+                      <span>{ticket.category.price}€</span>
                     </div>
                   ))}
                 </div>
@@ -340,7 +340,7 @@ export default function CheckoutPage({ orderId }: CheckoutProps) {
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>${order.total}</span>
+                    <span>{order.total}€</span>
                   </div>
                 </div>
               </div>

@@ -1,74 +1,115 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Settings, Calendar, Ticket as TicketIcon, DollarSign, Users, BarChart3, TrendingUp } from 'lucide-react'
 
-export default async function AdminDashboard() {
-  const { userId } = await auth()
-  
-  if (!userId) {
-    redirect('/sign-in')
-  }
+interface DashboardStats {
+  totalUsers: number
+  totalEvents: number
+  totalOrders: number
+  totalTickets: number
+  totalRevenue: number
+  upcomingEvents: number
+}
 
-  const clerk = await clerkClient()
-  const user = await clerk.users.getUser(userId)
-  
-  if (user.publicMetadata?.role !== 'admin') {
-    redirect('/')
-  }
+interface RecentEvent {
+  id: string
+  title: string
+  date: string
+  venue: string
+  status: string
+}
 
-  // Mock data for immediate display
-  const stats = {
-    totalUsers: 1247,
-    totalEvents: 8,
-    totalOrders: 342,
-    totalTickets: 756,
-    totalRevenue: 45680.50,
-    upcomingEvents: 3
-  }
+interface RecentOrder {
+  id: string
+  event: { title: string }
+  user: { name: string; email: string }
+  total: number
+  status: string
+  createdAt: string
+}
 
-  const recentEvents = [
-    {
-      id: '1',
-      title: 'Summer Music Festival 2025',
-      date: '2025-07-15',
-      venue: 'Central Park Amphitheater',
-      status: 'PUBLISHED'
-    },
-    {
-      id: '2',
-      title: 'Rock Concert Extravaganza',
-      date: '2025-08-20',
-      venue: 'Madison Square Garden',
-      status: 'PUBLISHED'
-    },
-    {
-      id: '3',
-      title: 'Jazz Night Special',
-      date: '2025-10-05',
-      venue: 'Blue Note',
-      status: 'DRAFT'
+interface DashboardData {
+  stats: DashboardStats
+  recentEvents: RecentEvent[]
+  recentOrders: RecentOrder[]
+}
+
+export default function AdminDashboard() {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isLoaded && (!user || user.publicMetadata?.role !== 'admin')) {
+      router.push('/sign-in')
+      return
     }
-  ]
-
-  const recentOrders = [
-    {
-      id: '1',
-      event: { title: 'Summer Music Festival 2025' },
-      user: { name: 'John Doe', email: 'john@example.com' },
-      total: 150.00,
-      status: 'CONFIRMED',
-      createdAt: '2025-09-28T10:00:00Z'
-    },
-    {
-      id: '2',
-      event: { title: 'Rock Concert Extravaganza' },
-      user: { name: 'Jane Smith', email: 'jane@example.com' },
-      total: 130.00,
-      status: 'PENDING',
-      createdAt: '2025-09-29T14:30:00Z'
+    
+    if (isLoaded && user && user.publicMetadata?.role === 'admin') {
+      fetchDashboardData()
     }
-  ]
+  }, [user, isLoaded, router])
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/admin/dashboard')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data')
+      }
+      
+      const data = await response.json()
+      setDashboardData(data)
+    } catch (err) {
+      console.error('❌ Error fetching dashboard data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!isLoaded || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+          <p className="text-white mt-4">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || user.publicMetadata?.role !== 'admin') {
+    return null // Will redirect
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 text-center">
+          <p className="text-white text-lg">Error loading dashboard: {error}</p>
+          <button 
+            onClick={fetchDashboardData}
+            className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return null
+  }
+
+  const { stats, recentEvents, recentOrders } = dashboardData
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
@@ -141,7 +182,7 @@ export default async function AdminDashboard() {
               <DollarSign className="h-10 w-10 text-yellow-400" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-300">Total Revenue</p>
-                <p className="text-3xl font-bold text-white">${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-bold text-white">{stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}€</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
                   <span className="text-xs text-green-400">+8% this month</span>
@@ -190,23 +231,35 @@ export default async function AdminDashboard() {
               </Link>
             </div>
             <div className="space-y-4">
-              {recentEvents.map((event) => (
-                <div key={event.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
-                  <div>
-                    <h3 className="font-medium text-white">{event.title}</h3>
-                    <p className="text-sm text-gray-300">
-                      {new Date(event.date).toLocaleDateString()} • {event.venue}
-                    </p>
+              {recentEvents.length > 0 ? (
+                recentEvents.map((event) => (
+                  <div key={event.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
+                    <div>
+                      <h3 className="font-medium text-white">{event.title}</h3>
+                      <p className="text-sm text-gray-300">
+                        {new Date(event.date).toLocaleDateString()} • {event.venue}
+                      </p>
+                    </div>
+                    <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
+                      event.status === 'PUBLISHED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                      event.status === 'DRAFT' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                      'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                    }`}>
+                      {event.status}
+                    </span>
                   </div>
-                  <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
-                    event.status === 'PUBLISHED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
-                    event.status === 'DRAFT' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
-                    'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
-                  }`}>
-                    {event.status}
-                  </span>
+                ))
+              ) : (
+                <div className="text-center p-8">
+                  <p className="text-gray-300">No events created yet</p>
+                  <Link
+                    href="/admin/events/create"
+                    className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                  >
+                    Create your first event →
+                  </Link>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -222,27 +275,34 @@ export default async function AdminDashboard() {
               </Link>
             </div>
             <div className="space-y-4">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
-                  <div>
-                    <h3 className="font-medium text-white">{order.event.title}</h3>
-                    <p className="text-sm text-gray-300">{order.user.name || order.user.email}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <div key={order.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
+                    <div>
+                      <h3 className="font-medium text-white">{order.event.title}</h3>
+                      <p className="text-sm text-gray-300">{order.user.name || order.user.email}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-white">{order.total.toFixed(2)}€</p>
+                      <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
+                        order.status === 'CONFIRMED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                        order.status === 'PENDING' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                        'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-white">${order.total.toFixed(2)}</p>
-                    <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
-                      order.status === 'CONFIRMED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
-                      order.status === 'PENDING' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
-                      'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center p-8">
+                  <p className="text-gray-300">No orders yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Orders will appear here when users book tickets</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

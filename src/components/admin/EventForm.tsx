@@ -454,7 +454,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        Price ($) *
+                        Price (€) *
                       </label>
                       <input
                         type="number"

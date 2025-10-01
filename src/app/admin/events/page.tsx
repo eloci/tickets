@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Calendar, 
@@ -12,63 +13,103 @@ import {
   Trash2, 
   ArrowLeft,
   Star,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react'
 
+interface Event {
+  id: string
+  title: string
+  description: string
+  date: string
+  venue: string
+  location: string
+  price?: number
+  capacity?: number
+  soldTickets: number
+  status: string
+  createdAt: string
+  image?: string
+  category?: string
+}
+
 export default function AdminEventsPage() {
-  // Mock data - replace with actual data fetching
-  const events = [
-    {
-      id: '1',
-      title: 'Summer Music Festival',
-      description: 'An amazing outdoor music festival featuring top artists from around the world.',
-      date: '2025-07-15',
-      venue: 'Central Park',
-      location: 'New York, NY',
-      price: 150,
-      capacity: 5000,
-      soldTickets: 3200,
-      status: 'PUBLISHED',
-      createdAt: '2025-01-01T10:00:00Z',
-      imageUrl: '/placeholder-event.jpg',
-      category: 'Music'
-    },
-    {
-      id: '2',
-      title: 'Tech Conference 2025',
-      description: 'Join industry leaders and innovators for a day of insightful talks and networking.',
-      date: '2025-05-20',
-      venue: 'Convention Center',
-      location: 'San Francisco, CA',
-      price: 200,
-      capacity: 1000,
-      soldTickets: 850,
-      status: 'PUBLISHED',
-      createdAt: '2025-01-05T14:30:00Z',
-      imageUrl: '/placeholder-event.jpg',
-      category: 'Technology'
-    },
-    {
-      id: '3',
-      title: 'Jazz Night Special',
-      description: 'Smooth jazz under the stars with renowned jazz musicians.',
-      date: '2025-09-10',
-      venue: 'Blue Note Club',
-      location: 'New York, NY',
-      price: 45,
-      capacity: 300,
-      soldTickets: 150,
-      status: 'DRAFT',
-      createdAt: '2025-01-08T15:20:00Z',
-      imageUrl: '/placeholder-event.jpg',
-      category: 'Jazz'
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchEvents()
+  }, [])
+
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch('/api/admin/events')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch events')
+      }
+      
+      const eventsData = await response.json()
+      setEvents(eventsData)
+    } catch (err) {
+      console.error('❌ Error fetching events:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch events')
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const deleteEvent = async (eventId: string) => {
+    try {
+      setDeletingId(eventId)
+      setError(null)
+      
+      const response = await fetch(`/api/admin/events/${eventId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete event')
+      }
+
+      // Remove the event from local state
+      setEvents(events.filter(event => event.id !== eventId))
+      
+      // Show success message
+      console.log('✅ Event deleted successfully')
+      
+    } catch (err) {
+      console.error('❌ Error deleting event:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete event')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleDeleteEvent = async (event: Event) => {
+    if (window.confirm(`Are you sure you want to delete "${event.title}"? This action cannot be undone.`)) {
+      await deleteEvent(event.id)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+          <p className="text-white mt-4">Loading events...</p>
+        </div>
+      </div>
+    )
+  }
 
   const totalEvents = events.length
   const publishedEvents = events.filter(e => e.status === 'PUBLISHED').length
   const draftEvents = events.filter(e => e.status === 'DRAFT').length
-  const totalRevenue = events.reduce((sum, event) => sum + (event.soldTickets * event.price), 0)
+  const totalRevenue = events.reduce((sum, event) => sum + (event.soldTickets * (event.price || 0)), 0)
 
   const getStatusBadge = (status: string) => {
     const baseClasses = "px-3 py-1 text-xs font-medium rounded-full"
@@ -86,6 +127,24 @@ export default function AdminEventsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Error Alert */}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-red-500/90 backdrop-blur-md border border-red-400 rounded-lg p-4 text-white shadow-lg">
+          <div className="flex items-center space-x-2">
+            <div className="flex-1">
+              <p className="font-medium">Error</p>
+              <p className="text-sm text-red-100">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-200 hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20 -z-10"></div>
@@ -164,7 +223,7 @@ export default function AdminEventsPage() {
                 <DollarSign className="h-10 w-10 text-purple-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Total Revenue</p>
-                  <p className="text-3xl font-bold text-white">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-white">{totalRevenue.toLocaleString()}€</p>
                   <div className="flex items-center mt-1">
                     <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
                     <span className="text-xs text-green-400">+12% this month</span>
@@ -208,7 +267,16 @@ export default function AdminEventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map((event) => (
               <div key={event.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
-                <div className="relative h-48 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600">
+                <div className="relative h-48 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 overflow-hidden">
+                  {event.image ? (
+                    <img 
+                      src={event.image} 
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600"></div>
+                  )}
                   <div className="absolute inset-0 bg-black bg-opacity-20"></div>
                   <div className="absolute top-4 right-4">
                     <span className={getStatusBadge(event.status)}>
@@ -242,7 +310,7 @@ export default function AdminEventsPage() {
                     
                     <div className="flex items-center text-gray-300">
                       <DollarSign className="h-4 w-4 mr-3 text-purple-400" />
-                      <span>${event.price} • {event.soldTickets}/{event.capacity} sold</span>
+                      <span>{event.price}€ • {event.soldTickets}/{event.capacity} sold</span>
                     </div>
                   </div>
                   
@@ -250,12 +318,12 @@ export default function AdminEventsPage() {
                   <div className="mb-4">
                     <div className="flex justify-between text-sm text-gray-300 mb-2">
                       <span>Tickets sold</span>
-                      <span>{Math.round((event.soldTickets / event.capacity) * 100)}%</span>
+                      <span>{event.capacity ? Math.round((event.soldTickets / event.capacity) * 100) : 0}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
                       <div 
                         className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${(event.soldTickets / event.capacity) * 100}%` }}
+                        style={{ width: `${event.capacity ? (event.soldTickets / event.capacity) * 100 : 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -278,22 +346,22 @@ export default function AdminEventsPage() {
                         <Eye className="h-4 w-4" />
                       </Link>
                       <button
-                        className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                        className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Delete Event"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this event?')) {
-                            // Add delete functionality here
-                            console.log('Deleting event:', event.id)
-                          }
-                        }}
+                        onClick={() => handleDeleteEvent(event)}
+                        disabled={deletingId === event.id}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deletingId === event.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                     
                     <div className="text-right">
                       <div className="text-sm text-gray-400">
-                        Revenue: <span className="text-white font-medium">${(event.soldTickets * event.price).toLocaleString()}</span>
+                        Revenue: <span className="text-white font-medium">{event.price ? (event.soldTickets * event.price).toLocaleString() : 'N/A'}€</span>
                       </div>
                     </div>
                   </div>

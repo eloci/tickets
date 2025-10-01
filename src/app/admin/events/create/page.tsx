@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { 
   Calendar, 
   MapPin, 
@@ -37,24 +38,7 @@ export default function CreateEventPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   
-  // Authentication check
-  useEffect(() => {
-    if (isLoaded && (!user || user.publicMetadata?.role !== 'admin')) {
-      router.push('/sign-in')
-    }
-  }, [user, isLoaded, router])
-
-  // Show loading while checking auth
-  if (!isLoaded || !user || user.publicMetadata?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
-          <p className="text-white mt-4">Loading...</p>
-        </div>
-      </div>
-    )
-  }
+  // ALL HOOKS MUST BE AT THE TOP - Rules of Hooks
   const [eventData, setEventData] = useState({
     title: '',
     category: '',
@@ -65,10 +49,11 @@ export default function CreateEventPage() {
     venue: '',
     location: '',
     address: '',
-    price: '',
-    capacity: '',
+    price: 0,
+    capacity: 1000,
+    image: '',
+    youtubeUrl: '',
     status: 'DRAFT',
-    image: null as File | null,
     tags: [] as string[],
     ticketTiers: [
       {
@@ -76,8 +61,8 @@ export default function CreateEventPage() {
         name: 'General Admission',
         price: 0,
         capacity: 0,
-        description: 'Standard entry to the event',
-        benefits: ['Event entry', 'Access to main area']
+        description: '',
+        benefits: ['Event entry']
       }
     ] as TicketTier[],
     socialLinks: {
@@ -96,6 +81,36 @@ export default function CreateEventPage() {
   const [currentTag, setCurrentTag] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  
+  // Debug component loading
+  useEffect(() => {
+    toast('Welcome to Event Creation')
+  }, [])
+  
+  // Authentication check
+  useEffect(() => {
+    if (isLoaded && (!user || user.publicMetadata?.role !== 'admin')) {
+      toast.error('Access denied. Admin privileges required.')
+      router.push('/sign-in')
+    } else if (isLoaded && user && user.publicMetadata?.role === 'admin') {
+      toast.success('Welcome to the Event Creation Dashboard!')
+    }
+  }, [user, isLoaded, router])
+
+  // Show loading while checking auth - AFTER all hooks
+  if (!isLoaded || !user || user.publicMetadata?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+          <p className="text-white mt-4">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleInputChange = (field: string, value: any) => {
     setEventData(prev => ({
@@ -115,13 +130,22 @@ export default function CreateEventPage() {
   }
 
   const addTag = () => {
-    if (currentTag.trim() && !eventData.tags.includes(currentTag.trim())) {
-      setEventData(prev => ({
-        ...prev,
-        tags: [...prev.tags, currentTag.trim()]
-      }))
-      setCurrentTag('')
+    if (!currentTag.trim()) {
+      toast.error('Please enter a tag')
+      return
     }
+    
+    if (eventData.tags.includes(currentTag.trim())) {
+      toast.error('Tag already exists')
+      return
+    }
+    
+    setEventData(prev => ({
+      ...prev,
+      tags: [...prev.tags, currentTag.trim()]
+    }))
+    setCurrentTag('')
+    toast.success('Tag added')
   }
 
   const removeTag = (tagToRemove: string) => {
@@ -129,6 +153,53 @@ export default function CreateEventPage() {
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }))
+    toast.success('Tag removed')
+  }
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return
+
+    setUploadingImage(true)
+    setImageFile(file)
+
+    // Create preview
+    const previewUrl = URL.createObjectURL(file)
+    setImagePreview(previewUrl)
+
+    try {
+      const formData = new FormData()
+      formData.append('files', file)
+
+      toast('Uploading image...')
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Upload failed: ${response.status} - ${errorData}`)
+      }
+
+      const result = await response.json()
+
+      if (result.files && result.files.length > 0) {
+        const imageUrl = result.files[0]
+        setEventData(prev => ({
+          ...prev,
+          image: imageUrl
+        }))
+        toast.success('Image uploaded successfully!')
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image'
+      toast.error(errorMessage)
+      setImagePreview(null)
+      setImageFile(null)
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const addTicketTier = () => {
@@ -144,6 +215,7 @@ export default function CreateEventPage() {
       ...prev,
       ticketTiers: [...prev.ticketTiers, newTier]
     }))
+    toast('New ticket tier added')
   }
 
   const updateTicketTier = (id: string, field: string, value: any) => {
@@ -156,28 +228,150 @@ export default function CreateEventPage() {
   }
 
   const removeTicketTier = (id: string) => {
+    if (eventData.ticketTiers.length <= 1) {
+      toast.error('At least one ticket tier is required')
+      return
+    }
+    
     setEventData(prev => ({
       ...prev,
       ticketTiers: prev.ticketTiers.filter(tier => tier.id !== id)
     }))
+    toast('Ticket tier removed')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🔥 FORM SUBMIT TRIGGERED!', e.type)
     e.preventDefault()
+    
+    console.log('Form submitted - starting validation...')
+    toast('Processing form submission...')
+    
+    // Validation
+    if (!eventData.title.trim()) {
+      console.log('❌ Validation failed: title missing')
+      toast.error('Event title is required')
+      return
+    }
+    
+    if (!eventData.description.trim()) {
+      toast.error('Event description is required')
+      return
+    }
+    
+    if (!eventData.date) {
+      toast.error('Event date is required')
+      return
+    }
+    
+    if (!eventData.venue.trim()) {
+      toast.error('Venue is required')
+      return
+    }
+    
+    if (!eventData.location.trim()) {
+      toast.error('Location is required')
+      return
+    }
+    
+    if (eventData.ticketTiers.length === 0) {
+      toast.error('At least one ticket tier is required')
+      return
+    }
+    
+    // Validate ticket tiers
+    for (const tier of eventData.ticketTiers) {
+      if (!tier.name.trim()) {
+        toast.error(`Ticket tier name is required`)
+        return
+      }
+      if (tier.price <= 0) {
+        toast.error(`Ticket tier "${tier.name}" must have a price greater than 0`)
+        return
+      }
+      if (tier.capacity <= 0) {
+        toast.error(`Ticket tier "${tier.name}" must have a capacity greater than 0`)
+        return
+      }
+    }
+    
+    if (!eventData.organizer.name.trim()) {
+      toast.error('Organizer name is required')
+      return
+    }
+    
+    if (!eventData.organizer.email.trim()) {
+      toast.error('Organizer email is required')
+      return
+    }
+    
     setLoading(true)
     
+    // Show loading toast
+    const loadingToast = toast.loading('Creating event...')
+    
     try {
-      // Here you would submit the form data to your API
-      console.log('Event data:', eventData)
-      // Add your API call here
+      console.log('Submitting event data:', eventData)
       
-      // Simulate loading
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare data for API
+      const eventPayload = {
+        ...eventData,
+        // Convert dates to proper format if needed
+        date: eventData.date,
+        time: eventData.time,
+        // Ensure ticket tiers have proper data types
+        ticketTiers: eventData.ticketTiers.map(tier => ({
+          ...tier,
+          price: parseFloat(tier.price.toString()),
+          capacity: parseInt(tier.capacity.toString())
+        }))
+      }
       
-      // Redirect on success
-      window.location.href = '/admin/events'
+      console.log('Prepared payload:', eventPayload)
+      
+      const response = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventPayload),
+      })
+      
+      console.log('Response status:', response.status)
+      
+      const result = await response.json()
+      console.log('Response data:', result)
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Server error: ${response.status}`)
+      }
+      
+      // Success
+      toast.success('Event created successfully!', {
+        id: loadingToast,
+      })
+      
+      console.log('Event created successfully:', result)
+      
+      // Redirect to events list after short delay
+      setTimeout(() => {
+        router.push('/admin/events')
+      }, 1500)
+      
     } catch (error) {
-      console.error('Error creating event:', error)
+      console.error('Detailed error creating event:', error)
+      
+      let errorMessage = 'Failed to create event'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
+      toast.error(errorMessage, {
+        id: loadingToast,
+        duration: 5000,
+      })
     } finally {
       setLoading(false)
     }
@@ -205,6 +399,17 @@ export default function CreateEventPage() {
                   </span>
                 </h1>
                 <p className="text-xl text-gray-200">Design an amazing experience for your audience</p>
+                
+                {/* Test Button for Debugging */}
+                <button 
+                  onClick={() => {
+                    console.log('🧪 TEST BUTTON CLICKED!')
+                    toast('Test button works!')
+                  }}
+                  className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                >
+                  🧪 Test Toast
+                </button>
               </div>
             </div>
             <div className="flex gap-3">
@@ -271,7 +476,7 @@ export default function CreateEventPage() {
                           value={eventData.title}
                           onChange={(e) => handleInputChange('title', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="Enter an amazing event title"
                         />
                       </div>
@@ -284,17 +489,17 @@ export default function CreateEventPage() {
                           value={eventData.category}
                           onChange={(e) => handleInputChange('category', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         >
-                          <option value="" className="bg-gray-800">Select category</option>
-                          <option value="concert" className="bg-gray-800">🎵 Concert</option>
-                          <option value="festival" className="bg-gray-800">🎪 Festival</option>
-                          <option value="theater" className="bg-gray-800">🎭 Theater</option>
-                          <option value="sports" className="bg-gray-800">⚽ Sports</option>
-                          <option value="comedy" className="bg-gray-800">😂 Comedy</option>
-                          <option value="conference" className="bg-gray-800">💼 Conference</option>
-                          <option value="workshop" className="bg-gray-800">🛠️ Workshop</option>
-                          <option value="networking" className="bg-gray-800">🤝 Networking</option>
+                          <option value="" className="bg-gray-800 text-white">Select category</option>
+                          <option value="concert" className="bg-gray-800 text-white">🎵 Concert</option>
+                          <option value="festival" className="bg-gray-800 text-white">🎪 Festival</option>
+                          <option value="theater" className="bg-gray-800 text-white">🎭 Theater</option>
+                          <option value="sports" className="bg-gray-800 text-white">⚽ Sports</option>
+                          <option value="comedy" className="bg-gray-800 text-white">😂 Comedy</option>
+                          <option value="conference" className="bg-gray-800 text-white">💼 Conference</option>
+                          <option value="workshop" className="bg-gray-800 text-white">🛠️ Workshop</option>
+                          <option value="networking" className="bg-gray-800 text-white">🤝 Networking</option>
                         </select>
                       </div>
                     </div>
@@ -309,27 +514,54 @@ export default function CreateEventPage() {
                         onChange={(e) => handleInputChange('description', e.target.value)}
                         rows={4}
                         required
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm resize-none"
+                        className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg resize-none"
                         placeholder="Describe what makes your event special and exciting..."
                       />
                     </div>
 
-                    {/* Tags */}
+                    {/* YouTube URL */}
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-3">
-                        Event Tags
+                        <Globe className="inline h-4 w-4 mr-2" />
+                        YouTube Video URL
                       </label>
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <input
+                        type="url"
+                        value={eventData.youtubeUrl}
+                        onChange={(e) => handleInputChange('youtubeUrl', e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
+                        placeholder="https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID"
+                      />
+                      <p className="text-gray-400 text-xs mt-2">
+                        Add a YouTube video to showcase your event (optional)
+                      </p>
+                    </div>
+
+                    {/* Event Tags - Displayed as Stickers */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-3">
+                        <Tag className="inline h-4 w-4 mr-2" />
+                        Event Tags (as stickers)
+                      </label>
+                      <p className="text-gray-400 text-xs mb-3">
+                        Add tags that will appear as colorful stickers on your event
+                      </p>
+                      <div className="flex flex-wrap gap-3 mb-4">
                         {eventData.tags.map((tag, index) => (
                           <span
                             key={index}
-                            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm flex items-center"
+                            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center shadow-lg transform hover:scale-105 transition-all duration-200"
+                            style={{ 
+                              boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)' 
+                            }}
                           >
+                            <Tag className="h-3 w-3 mr-1" />
                             {tag}
                             <button
                               type="button"
                               onClick={() => removeTag(tag)}
-                              className="ml-2 hover:text-gray-200"
+                              className="ml-2 hover:text-gray-200 transition-colors"
+                              title="Remove tag"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -342,14 +574,15 @@ export default function CreateEventPage() {
                           value={currentTag}
                           onChange={(e) => setCurrentTag(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                          className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
-                          placeholder="Add tags (music, outdoor, family-friendly...)"
+                          className="flex-1 px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
+                          placeholder="Add tags (music, outdoor, family-friendly, concert, festival...)"
                         />
                         <button
                           type="button"
                           onClick={addTag}
-                          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200"
+                          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-medium shadow-lg"
                         >
+                          <Plus className="h-4 w-4 mr-1 inline" />
                           Add
                         </button>
                       </div>
@@ -361,20 +594,55 @@ export default function CreateEventPage() {
                         Event Banner Image
                       </label>
                       <div className="border-2 border-dashed border-white/30 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
-                        <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        {imagePreview ? (
+                          <div className="relative">
+                            <img 
+                              src={imagePreview} 
+                              alt="Event preview" 
+                              className="max-h-48 mx-auto rounded-lg mb-4"
+                            />
+                            <button
+                              onClick={() => {
+                                setImagePreview(null)
+                                setImageFile(null)
+                                setEventData(prev => ({ ...prev, image: '' }))
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        )}
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleInputChange('image', e.target.files?.[0] || null)}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              handleImageUpload(file)
+                            }
+                          }}
                           className="hidden"
                           id="image-upload"
+                          disabled={uploadingImage}
                         />
                         <label
                           htmlFor="image-upload"
-                          className="cursor-pointer bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 inline-flex items-center"
+                          className={`cursor-pointer bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 inline-flex items-center ${uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Image
+                          {uploadingImage ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {imagePreview ? 'Change Image' : 'Upload Image'}
+                            </>
+                          )}
                         </label>
                         <p className="text-gray-400 text-sm mt-2">
                           Recommended: 1920x1080px, Max 5MB
@@ -406,7 +674,7 @@ export default function CreateEventPage() {
                           value={eventData.date}
                           onChange={(e) => handleInputChange('date', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         />
                       </div>
                       
@@ -420,7 +688,7 @@ export default function CreateEventPage() {
                           value={eventData.time}
                           onChange={(e) => handleInputChange('time', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         />
                       </div>
 
@@ -433,7 +701,7 @@ export default function CreateEventPage() {
                           type="time"
                           value={eventData.endTime}
                           onChange={(e) => handleInputChange('endTime', e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         />
                       </div>
                     </div>
@@ -450,7 +718,7 @@ export default function CreateEventPage() {
                           value={eventData.venue}
                           onChange={(e) => handleInputChange('venue', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="Amazing Venue Name"
                         />
                       </div>
@@ -464,7 +732,7 @@ export default function CreateEventPage() {
                           value={eventData.location}
                           onChange={(e) => handleInputChange('location', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="New York, NY"
                         />
                       </div>
@@ -479,7 +747,7 @@ export default function CreateEventPage() {
                         type="text"
                         value={eventData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                        className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         placeholder="123 Event Street, City, State 12345"
                       />
                     </div>
@@ -560,7 +828,7 @@ export default function CreateEventPage() {
                               type="text"
                               value={tier.name}
                               onChange={(e) => updateTicketTier(tier.id, 'name', e.target.value)}
-                              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                              className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                               placeholder="General Admission, VIP, etc."
                             />
                           </div>
@@ -573,7 +841,7 @@ export default function CreateEventPage() {
                               type="text"
                               value={tier.description}
                               onChange={(e) => updateTicketTier(tier.id, 'description', e.target.value)}
-                              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                              className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                               placeholder="Short description of this tier"
                             />
                           </div>
@@ -591,7 +859,7 @@ export default function CreateEventPage() {
                               onChange={(e) => updateTicketTier(tier.id, 'price', parseFloat(e.target.value) || 0)}
                               min="0"
                               step="0.01"
-                              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                              className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                               placeholder="0.00"
                             />
                           </div>
@@ -606,7 +874,7 @@ export default function CreateEventPage() {
                               value={tier.capacity}
                               onChange={(e) => updateTicketTier(tier.id, 'capacity', parseInt(e.target.value) || 0)}
                               min="1"
-                              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                              className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                               placeholder="Available tickets"
                             />
                           </div>
@@ -645,7 +913,7 @@ export default function CreateEventPage() {
                           value={eventData.organizer.name}
                           onChange={(e) => handleNestedInputChange('organizer', 'name', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="Your name or company"
                         />
                       </div>
@@ -659,7 +927,7 @@ export default function CreateEventPage() {
                           value={eventData.organizer.email}
                           onChange={(e) => handleNestedInputChange('organizer', 'email', e.target.value)}
                           required
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="contact@example.com"
                         />
                       </div>
@@ -673,7 +941,7 @@ export default function CreateEventPage() {
                         type="tel"
                         value={eventData.organizer.phone}
                         onChange={(e) => handleNestedInputChange('organizer', 'phone', e.target.value)}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                        className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         placeholder="+1 (555) 123-4567"
                       />
                     </div>
@@ -699,7 +967,7 @@ export default function CreateEventPage() {
                           type="url"
                           value={eventData.socialLinks.website}
                           onChange={(e) => handleNestedInputChange('socialLinks', 'website', e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="https://your-website.com"
                         />
                       </div>
@@ -712,7 +980,7 @@ export default function CreateEventPage() {
                           type="url"
                           value={eventData.socialLinks.facebook}
                           onChange={(e) => handleNestedInputChange('socialLinks', 'facebook', e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="https://facebook.com/yourevent"
                         />
                       </div>
@@ -727,7 +995,7 @@ export default function CreateEventPage() {
                           type="url"
                           value={eventData.socialLinks.twitter}
                           onChange={(e) => handleNestedInputChange('socialLinks', 'twitter', e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="https://twitter.com/yourevent"
                         />
                       </div>
@@ -740,7 +1008,7 @@ export default function CreateEventPage() {
                           type="url"
                           value={eventData.socialLinks.instagram}
                           onChange={(e) => handleNestedInputChange('socialLinks', 'instagram', e.target.value)}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                          className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                           placeholder="https://instagram.com/yourevent"
                         />
                       </div>
@@ -766,6 +1034,10 @@ export default function CreateEventPage() {
                   <button
                     type="submit"
                     disabled={loading}
+                    onClick={(e) => {
+                      console.log('🔥 BUTTON CLICKED!', e.type)
+                      toast('Button clicked - triggering submit...')
+                    }}
                     className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (

@@ -121,7 +121,7 @@ export default async function AdminOrdersPage() {
               <DollarSign className="h-8 w-8 text-purple-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalRevenue.toLocaleString()}€</p>
               </div>
             </div>
           </div>
@@ -189,10 +189,10 @@ export default async function AdminOrdersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${order.totalAmount.toFixed(2)}
+                        {order.totalAmount.toFixed(2)}€
                       </div>
                       <div className="text-sm text-gray-500">
-                        ${(order.totalAmount / order.tickets.length).toFixed(2)} per ticket
+                        {(order.totalAmount / order.tickets.length).toFixed(2)}€ per ticket
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

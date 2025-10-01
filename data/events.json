@@ -1,0 +1,60 @@
+[
+  {
+    "title": "SPECIAL ENSAR",
+    "category": "concert",
+    "description": "Ensar is going to sing in the middle of gostivar this will be the iggest ever in gostivar",
+    "date": "2025-10-14",
+    "time": "01:07",
+    "endTime": "04:10",
+    "venue": "Gostivar sqare",
+    "location": "Gostivar",
+    "address": "jna 1 gostivar",
+    "price": 0,
+    "capacity": 1000,
+    "image": "/uploads/events/1759309495438-1.png",
+    "youtubeUrl": "https://www.youtube.com/watch?v=JAJoCzQBos4",
+    "status": "PUBLISHED",
+    "tags": [
+      "music",
+      "songs",
+      "event",
+      "gostivar"
+    ],
+    "ticketTiers": [
+      {
+        "id": "1",
+        "name": "Normal",
+        "price": 100,
+        "capacity": 100,
+        "description": "normal ticket",
+        "benefits": [
+          "Event entry"
+        ]
+      },
+      {
+        "id": "1759309579116",
+        "name": "VIP",
+        "price": 200,
+        "capacity": 50,
+        "description": "Vip tickets",
+        "benefits": [
+          "Event entry"
+        ]
+      }
+    ],
+    "socialLinks": {
+      "website": "",
+      "facebook": "",
+      "twitter": "",
+      "instagram": ""
+    },
+    "organizer": {
+      "name": "AdmirJakupi",
+      "email": "admir@jakupi.gmbh",
+      "phone": "+38970700000"
+    },
+    "id": "event_1759309626569",
+    "soldTickets": 45,
+    "createdAt": "2025-01-01T12:00:00.000Z"
+  }
+]

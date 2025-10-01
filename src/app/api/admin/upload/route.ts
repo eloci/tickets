@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/clerk-auth'
-import connectDB from '@/lib/database'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAdmin()
-    await connectDB()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const clerk = await clerkClient()
+    const user = await clerk.users.getUser(userId)
+    
+    if (user.publicMetadata?.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin required' }, { status: 403 })
+    }
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
@@ -30,10 +39,10 @@ export async function POST(request: NextRequest) {
         continue // Skip non-image files
       }
 
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size (20MB limit)
+      if (file.size > 20 * 1024 * 1024) {
         return NextResponse.json(
-          { error: `File ${file.name} is too large. Maximum size is 5MB.` },
+          { error: `File ${file.name} is too large. Maximum size is 20MB.` },
           { status: 400 }
         )
       }
@@ -59,7 +68,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error uploading files:', error)
+    console.error('❌ Error uploading files:', error)
     return NextResponse.json(
       { error: 'Failed to upload files' },
       { status: 500 }

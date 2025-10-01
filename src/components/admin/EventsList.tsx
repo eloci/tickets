@@ -1,10 +1,27 @@
 'use client'
 
 import { useState } from 'react'
-import { Event, Category } from '@prisma/client'
 import Link from 'next/link'
 import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+
+interface Category {
+  id: string
+  name: string
+  description: string
+  price: number
+  capacity: number
+}
+
+interface Event {
+  id: string
+  title: string
+  description?: string
+  venue: string
+  date: string
+  capacity?: number
+  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
+}
 
 interface EventWithDetails extends Event {
   categories: Category[]
@@ -155,7 +172,7 @@ export default function EventsList({ initialEvents }: EventsListProps) {
                         key={category.id}
                         className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
                       >
-                        {category.name} - ${category.price.toString()}
+                        {category.name} - {category.price.toString()}€
                       </span>
                     ))}
                   </div>

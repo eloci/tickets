@@ -162,7 +162,7 @@ export default function TicketSelector({ eventId, categories }: TicketSelectorPr
                   )}
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-white">${Number(category.price).toFixed(2)}</div>
+                  <div className="text-xl font-bold text-white">{Number(category.price).toFixed(2)}€</div>
                 </div>
               </div>
 
@@ -196,7 +196,7 @@ export default function TicketSelector({ eventId, categories }: TicketSelectorPr
       <div className="mt-6 pt-6 border-t border-white/20">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold text-white">Total</span>
-          <span className="text-2xl font-bold text-white">${getTotalPrice().toFixed(2)}</span>
+          <span className="text-2xl font-bold text-white">{getTotalPrice().toFixed(2)}€</span>
         </div>
 
         <button

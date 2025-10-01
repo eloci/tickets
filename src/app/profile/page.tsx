@@ -104,7 +104,7 @@ export default async function ProfilePage() {
                   </div>
                   
                   <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">$0</div>
+                    <div className="text-2xl font-bold text-green-600">0€</div>
                     <div className="text-sm text-gray-600">Total Spent</div>
                   </div>
                 </div>

@@ -1,7 +1,5 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import connectDB from './database'
-import { User } from './schemas'
 
 export async function getAuthUser() {
   const { userId } = await auth()
@@ -10,25 +8,14 @@ export async function getAuthUser() {
   const clerkUser = await currentUser()
   if (!clerkUser) return null
 
-  await connectDB()
-  let dbUser = await User.findOne({ clerkId: userId }).lean()
-
-  if (!dbUser) {
-    dbUser = await User.create({
-      clerkId: userId,
-      email: clerkUser.emailAddresses[0]?.emailAddress || '',
-      name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
-      image: clerkUser.imageUrl,
-    })
-  }
-
+  // Return user data from Clerk without MongoDB
   return {
-    id: dbUser._id.toString(),
-    clerkId: dbUser.clerkId,
-    email: dbUser.email,
-    name: dbUser.name,
-    image: dbUser.image,
-    role: dbUser.role,
+    id: userId,
+    clerkId: userId,
+    email: clerkUser.emailAddresses[0]?.emailAddress || '',
+    name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
+    image: clerkUser.imageUrl,
+    role: clerkUser.publicMetadata?.role as string || 'USER',
   }
 }
 
@@ -49,16 +36,21 @@ export async function requireAdmin() {
 }
 
 export async function getUserById(id: string) {
-  await connectDB()
-  const user = await User.findById(id).lean()
-  if (!user) return null
-  
-  return {
-    id: user._id.toString(),
-    clerkId: user.clerkId,
-    email: user.email,
-    name: user.name,
-    image: user.image,
-    role: user.role,
+  try {
+    const clerk = await clerkClient()
+    const clerkUser = await clerk.users.getUser(id)
+    if (!clerkUser) return null
+    
+    return {
+      id: clerkUser.id,
+      clerkId: clerkUser.id,
+      email: clerkUser.emailAddresses[0]?.emailAddress || '',
+      name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
+      image: clerkUser.imageUrl,
+      role: clerkUser.publicMetadata?.role as string || 'USER',
+    }
+  } catch (error) {
+    console.error('Error fetching user:', error)
+    return null
   }
 }

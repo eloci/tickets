@@ -1,81 +1,113 @@
-import Header from '@/components/Header'
+﻿'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, MapPin, Users, Clock, Star, ArrowRight } from 'lucide-react'
+import { Calendar, MapPin, Users, Ticket } from 'lucide-react'
+import Header from '@/components/Header'
 
-export default async function EventsPage() {
-  // Mock events data - replace with MongoDB query
-  const events = [
-    {
-      id: '1',
-      title: 'Summer Music Festival 2025',
-      description: 'Join us for an amazing night of music with top artists from around the world. Experience the magic of live music under the stars.',
-      date: new Date('2025-07-15'),
-      venue: 'Central Park Amphitheater',
-      location: 'New York, NY',
-      price: 75,
-      capacity: 1000,
-      soldTickets: 485,
-      imageUrl: '/placeholder-event.jpg',
-      featured: true,
-      category: 'Music Festival'
-    },
-    {
-      id: '2',
-      title: 'Rock Concert Extravaganza',
-      description: 'Experience the best rock bands live in an unforgettable night of pure rock energy and incredible performances.',
-      date: new Date('2025-08-20'),
-      venue: 'Madison Square Garden',
-      location: 'New York, NY',
-      price: 65,
-      capacity: 800,
-      soldTickets: 320,
-      imageUrl: '/placeholder-event.jpg',
-      featured: false,
-      category: 'Rock Concert'
-    },
-    {
-      id: '3',
-      title: 'Jazz Night Special',
-      description: 'Smooth jazz under the stars with renowned jazz musicians from around the globe. An intimate evening of sophisticated music.',
-      date: new Date('2025-09-10'),
-      venue: 'Blue Note Club',
-      location: 'New York, NY',
-      price: 45,
-      capacity: 300,
-      soldTickets: 150,
-      imageUrl: '/placeholder-event.jpg',
-      featured: true,
-      category: 'Jazz'
-    },
-    {
-      id: '4',
-      title: 'Electronic Dance Paradise',
-      description: 'The biggest EDM event of the year featuring world-class DJs and cutting-edge production.',
-      date: new Date('2025-10-05'),
-      venue: 'Brooklyn Warehouse',
-      location: 'Brooklyn, NY',
-      price: 85,
-      capacity: 1200,
-      soldTickets: 720,
-      imageUrl: '/placeholder-event.jpg',
-      featured: false,
-      category: 'Electronic'
+interface Event {
+  id: string
+  title: string
+  description: string
+  date: string
+  venue: string
+  image?: string
+  price?: number
+  capacity?: number
+  soldTickets?: number
+  ticketTiers?: Array<{
+    id: string
+    name: string
+    price: number
+    capacity: number
+    description: string
+  }>
+  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
+}
+
+export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Calculate remaining spots for an event
+  const calculateRemainingSpots = (event: Event): number => {
+    if (event.ticketTiers && event.ticketTiers.length > 0) {
+      // Sum up all tier capacities
+      const totalCapacity = event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+      return Math.max(0, totalCapacity - (event.soldTickets || 0))
+    } else if (event.capacity) {
+      // Use single capacity
+      return Math.max(0, event.capacity - (event.soldTickets || 0))
     }
-  ]
+    return 0
+  }
 
-  const featuredEvents = events.filter(event => event.featured)
-  const upcomingEvents = events.filter(event => !event.featured)
+  // Calculate total capacity for an event
+  const getTotalCapacity = (event: Event): number => {
+    if (event.ticketTiers && event.ticketTiers.length > 0) {
+      return event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+    } else if (event.capacity) {
+      return event.capacity
+    }
+    return 0
+  }
+
+  // Calculate tickets sold percentage
+  const getTicketsSoldPercentage = (event: Event): number => {
+    const totalCapacity = getTotalCapacity(event)
+    const soldTickets = event.soldTickets || 0
+    return totalCapacity > 0 ? Math.round((soldTickets / totalCapacity) * 100) : 0
+  }
+
+  // Get ribbon color and text based on remaining spots
+  const getRibbonInfo = (remainingSpots: number, totalCapacity: number) => {
+    const percentage = totalCapacity > 0 ? (remainingSpots / totalCapacity) * 100 : 0
+    
+    if (remainingSpots === 0) {
+      return { color: 'bg-red-500', text: 'SOLD OUT' }
+    } else if (percentage <= 10) {
+      return { color: 'bg-red-500', text: `${remainingSpots} LEFT` }
+    } else if (percentage <= 25) {
+      return { color: 'bg-orange-500', text: `${remainingSpots} LEFT` }
+    } else if (percentage <= 50) {
+      return { color: 'bg-yellow-500', text: `${remainingSpots} LEFT` }
+    } else {
+      return { color: 'bg-green-500', text: `${remainingSpots} SPOTS` }
+    }
+  }
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events')
+        if (response.ok) {
+          const data = await response.json()
+          // Show only the first 3 events on homepage
+          setEvents(Array.isArray(data) ? data : [])
+        } else {
+          setEvents([])
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error)
+        setEvents([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
-      
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20 -z-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+                        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               Discover Amazing
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
                 {' '}Events
@@ -84,182 +116,223 @@ export default async function EventsPage() {
             <p className="text-xl text-gray-200 mb-8 max-w-3xl mx-auto">
               From intimate jazz nights to massive music festivals - find your perfect event and book instantly with secure payments and QR code tickets.
             </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/events"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+              >
+                Browse Events
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Featured Events Section */}
-      {featuredEvents.length > 0 && (
-        <div className="relative -mt-12 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-4 flex items-center justify-center">
-                <Star className="h-8 w-8 text-yellow-400 mr-3" />
-                Featured Events
-              </h2>
-              <p className="text-gray-300">Don't miss these amazing upcoming events</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-              {featuredEvents.map((event) => (
-                <div key={event.id} className="group bg-white rounded-2xl shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-300 transform hover:scale-[1.02]">
-                  <div className="relative h-64 bg-gradient-to-br from-purple-500 to-blue-600">
-                    <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-bold flex items-center">
-                        <Star className="h-3 w-3 mr-1" />
-                        FEATURED
-                      </span>
-                    </div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-2xl font-bold mb-2">{event.title}</h3>
-                      <p className="text-sm opacity-90">{event.category}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="p-8">
-                    <p className="text-gray-600 mb-6 text-lg leading-relaxed">{event.description}</p>
-                    
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center text-gray-700">
-                        <Calendar className="h-5 w-5 mr-3 text-purple-500" />
-                        <span className="font-medium">{event.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-gray-700">
-                        <MapPin className="h-5 w-5 mr-3 text-purple-500" />
-                        <span>{event.venue}, {event.location}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-gray-700">
-                        <Users className="h-5 w-5 mr-3 text-purple-500" />
-                        <span>{event.soldTickets} / {event.capacity} tickets sold</span>
-                      </div>
-                    </div>
-                    
-                    {/* Progress bar */}
-                    <div className="mb-6">
-                      <div className="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>Tickets sold</span>
-                        <span>{Math.round((event.soldTickets / event.capacity) * 100)}% sold</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300" 
-                          style={{ width: `${(event.soldTickets / event.capacity) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="text-3xl font-bold text-purple-600">${event.price}</span>
-                        <span className="text-gray-500 text-lg"> per ticket</span>
-                      </div>
-                      
-                      <Link
-                        href={`/events/${event.id}`}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center font-semibold"
-                      >
-                        Book Now
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* All Events Section */}
-      <div className="bg-gradient-to-b from-transparent to-gray-50 py-16">
+      {/* Upcoming Events Section */}
+      <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">All Upcoming Events</h2>
-            <p className="text-gray-300">Explore our complete collection of amazing events</p>
+            <h2 className="text-3xl font-bold text-white mb-4">All Events</h2>
+            <p className="text-gray-300 text-lg">Find your perfect event and book now</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingEvents.map((event) => (
-              <div key={event.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]">
-                <div className="relative h-48 bg-gradient-to-br from-purple-500 to-blue-600">
-                  <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-white bg-opacity-90 text-purple-600 px-2 py-1 rounded-full text-xs font-bold">
-                      {event.category}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <h3 className="text-xl font-bold">{event.title}</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {loading ? (
+              // Loading state
+              [...Array(3)].map((_, index) => (
+                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden animate-pulse">
+                  <div className="h-48 bg-gray-600"></div>
+                  <div className="p-6">
+                    <div className="h-6 bg-gray-600 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-600 rounded mb-2 w-3/4"></div>
+                    <div className="h-4 bg-gray-600 rounded mb-4 w-1/2"></div>
+                    <div className="flex justify-between items-center">
+                      <div className="h-8 bg-gray-600 rounded w-20"></div>
+                      <div className="h-10 bg-gray-600 rounded w-24"></div>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : events && events.length > 0 ? (
+              events.map((event) => {
+                // Calculate minimum price from ticketTiers or use fallback price
+                const minPrice = event.ticketTiers && event.ticketTiers.length > 0 
+                  ? Math.min(...event.ticketTiers.map(tier => tier.price))
+                  : event.price || 50
                 
-                <div className="p-6">
-                  <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
-                  
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-gray-700">
-                      <Calendar className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="text-sm">{event.date.toLocaleDateString()}</span>
+                // Calculate remaining spots and total capacity
+                const remainingSpots = calculateRemainingSpots(event)
+                const totalCapacity = event.ticketTiers && event.ticketTiers.length > 0
+                  ? event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+                  : event.capacity || 0
+                const ribbonInfo = getRibbonInfo(remainingSpots, totalCapacity)
+                
+                return (
+                  <div key={event.id} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-200 relative">
+                    {/* Availability Ribbon */}
+                    <div className={`absolute top-4 right-4 z-10 ${ribbonInfo.color} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg transform rotate-12`}>
+                      {ribbonInfo.text}
                     </div>
                     
-                    <div className="flex items-center text-gray-700">
-                      <MapPin className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="text-sm">{event.venue}, {event.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-700">
-                      <Users className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="text-sm">{event.soldTickets} / {event.capacity} tickets sold</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-2xl font-bold text-purple-600">${event.price}</span>
-                      <span className="text-gray-500"> per ticket</span>
-                    </div>
-                    
-                    <Link
-                      href={`/events/${event.id}`}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center"
-                    >
-                      View Details
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </div>
-                  
-                  {/* Progress bar */}
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Tickets sold</span>
-                      <span>{Math.round((event.soldTickets / event.capacity) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="h-48 bg-gradient-to-br from-pink-500 to-purple-600 relative">
+                      {event.image ? (
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Homepage image failed to load:', event.image)
+                            // Hide the broken image and show fallback
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      ) : null}
                       <div 
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${(event.soldTickets / event.capacity) * 100}%` }}
-                      ></div>
+                        className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center"
+                        style={{ display: event.image ? 'none' : 'flex' }}
+                      >
+                        <div className="text-center text-white">
+                          <div className="text-6xl font-bold mb-2">🎵</div>
+                          <div className="text-lg font-semibold">{event.title}</div>
+                        </div>
+                      </div>
+                      <div className="absolute inset-0 bg-black/30"></div>
+                      <div className="absolute bottom-4 left-4">
+                        <div className="text-white text-2xl font-bold">{new Date(event.date).getDate()}</div>
+                        <div className="text-white text-sm">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
+                      <div className="flex items-center text-gray-300 mb-2">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span className="text-sm">{event.venue}</span>
+                      </div>
+                      <div className="flex items-center text-gray-300 mb-4">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
+                      </div>
+
+                      {/* Tickets Sold Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-gray-300 flex items-center">
+                            <Ticket className="h-3 w-3 mr-1" />
+                            Tickets sold
+                          </span>
+                          <span className="text-sm font-bold text-blue-400">{getTicketsSoldPercentage(event)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-700/50 rounded-full h-2.5 backdrop-blur-sm border border-gray-600/30">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-2.5 rounded-full transition-all duration-700 ease-out shadow-lg shadow-blue-500/20"
+                            style={{ width: `${getTicketsSoldPercentage(event)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+                          <span>{event.soldTickets || 0} sold</span>
+                          <span>{getTotalCapacity(event)} total</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="text-2xl font-bold text-white">
+                            from {minPrice}€+
+                          </span>
+                        </div>
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
+                        >
+                          Get Tickets
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )
+              })
+            ) : (
+              // Empty state
+              <div className="col-span-full text-center py-12">
+                <div className="text-white text-xl mb-4">🎵</div>
+                <h3 className="text-xl font-bold text-white mb-2">No Upcoming Events</h3>
+                <p className="text-gray-300 mb-6">Check back soon for new concerts and events!</p>
+                <Link
+                  href="/events"
+                  className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 inline-block"
+                >
+                  Browse All Events
+                </Link>
               </div>
-            ))}
+            )}
           </div>
-          
-          {events.length === 0 && (
-            <div className="text-center py-12">
-              <div className="bg-white rounded-2xl shadow-xl p-12 max-w-md mx-auto">
-                <Clock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No events found</h3>
-                <p className="text-gray-500">Check back later for upcoming events!</p>
-              </div>
-            </div>
-          )}
+
+          <div className="text-center mt-12">
+            <Link
+              href="/events"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-900 transition-all duration-200 inline-block"
+            >
+              View All Events
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Features Section */}
+      <div className="py-16 bg-white/5 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Why Choose Our Platform?</h2>
+            <p className="text-gray-300 text-lg">Experience the future of concert ticketing</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
+              <Ticket className="h-12 w-12 text-pink-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Secure QR Tickets</h3>
+              <p className="text-gray-300">Crypto-signed QR codes for maximum security</p>
+            </div>
+
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
+              <Users className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Multiple Payment Options</h3>
+              <p className="text-gray-300">Stripe, PayPal, Apple Pay, Google Pay supported</p>
+            </div>
+
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
+              <MapPin className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Mobile Wallet Ready</h3>
+              <p className="text-gray-300">Add tickets to Apple Wallet & Google Pay</p>
+            </div>
+
+            <div className="text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
+              <Calendar className="h-12 w-12 text-green-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Instant Delivery</h3>
+              <p className="text-gray-300">Get your tickets immediately via email</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-black/30 backdrop-blur-sm py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-white mb-4">Concert Tickets</h3>
+            <p className="text-gray-300 mb-6">Your trusted platform for concert ticket booking</p>
+            <div className="flex justify-center space-x-6">
+              <Link href="/about" className="text-gray-300 hover:text-white transition-colors">About</Link>
+              <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact</Link>
+              <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">Privacy</Link>
+              <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">Terms</Link>
+            </div>
+            <div className="mt-6 text-gray-400 text-sm">
+              2024 Concert Tickets. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

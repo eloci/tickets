@@ -134,7 +134,7 @@ export default function DashboardStats() {
             <DollarSign className="h-8 w-8 text-yellow-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}€</p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                 <span className="text-xs text-green-600">+8% this month</span>
@@ -227,7 +227,7 @@ export default function DashboardStats() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-gray-900">${order.total.toFixed(2)}</p>
+                  <p className="font-medium text-gray-900">{order.total.toFixed(2)}€</p>
                   <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                     order.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
                     order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :

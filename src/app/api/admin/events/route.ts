@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
+import { EventsStorage } from '@/lib/storage/events'
 
 export async function GET() {
   try {
@@ -15,23 +16,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin required' }, { status: 403 })
     }
 
-    const events = [
-      {
-        id: '1',
-        title: 'Summer Music Festival 2025',
-        description: 'Join us for an amazing night of music.',
-        date: '2025-07-15',
-        venue: 'Central Park Amphitheater',
-        location: 'New York, NY',
-        price: 75,
-        capacity: 1000,
-        soldTickets: 485,
-        status: 'PUBLISHED'
-      }
-    ]
-
+    const events = EventsStorage.getAll()
     return NextResponse.json(events)
   } catch (error) {
+    console.error('❌ Error fetching events:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -51,15 +39,11 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
-    const newEvent = {
-      id: `event_${Date.now()}`,
-      ...data,
-      soldTickets: 0,
-      createdAt: new Date().toISOString()
-    }
+    const newEvent = EventsStorage.create(data)
 
     return NextResponse.json(newEvent, { status: 201 })
   } catch (error) {
+    console.error('❌ Error creating event:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

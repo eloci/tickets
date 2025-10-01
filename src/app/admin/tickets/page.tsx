@@ -1,4 +1,7 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
@@ -18,112 +21,83 @@ import {
   DollarSign
 } from 'lucide-react'
 
-export default async function AdminTicketsPage() {
-  const { userId } = await auth()
-  
-  if (!userId) {
-    redirect('/sign-in')
-  }
+interface TicketData {
+  id: string
+  orderId: string
+  eventId: string
+  eventTitle: string
+  eventDate: string
+  userId: string
+  userName: string
+  userEmail: string
+  ticketType: string
+  price: number
+  status: 'PURCHASED' | 'USED' | 'REFUNDED' | 'CANCELLED'
+  qrCode: string
+  purchaseDate: string
+  usedDate?: string
+  refundDate?: string
+}
 
-  // Check if user is admin
-  const clerk = await clerkClient()
-  const user = await clerk.users.getUser(userId)
-  if (!user || user.publicMetadata?.role !== 'admin') {
-    redirect('/')
-  }
+interface TicketStats {
+  totalTickets: number
+  usedTickets: number
+  purchasedTickets: number
+  refundedTickets: number
+  totalRevenue: number
+}
 
-  // Mock tickets data - replace with MongoDB query
-  const tickets = [
-    {
-      id: 'ticket_1',
-      orderId: 'order_1',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      userId: 'user_123',
-      userName: 'John Doe',
-      userEmail: 'john@example.com',
-      ticketType: 'General Admission',
-      price: 75,
-      status: 'PURCHASED',
-      qrCode: 'QR12345ABCDE',
-      purchaseDate: '2025-01-10T10:00:00Z',
-      usedAt: null
-    },
-    {
-      id: 'ticket_2',
-      orderId: 'order_2',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      userId: 'user_456',
-      userName: 'Jane Smith',
-      userEmail: 'jane@example.com',
-      ticketType: 'VIP Access',
-      price: 150,
-      status: 'USED',
-      qrCode: 'QR67890FGHIJ',
-      purchaseDate: '2025-01-08T14:30:00Z',
-      usedAt: '2025-07-15T18:00:00Z'
-    },
-    {
-      id: 'ticket_3',
-      orderId: 'order_3',
-      eventId: '2',
-      eventTitle: 'Tech Conference 2025',
-      eventDate: '2025-05-20',
-      userId: 'user_789',
-      userName: 'Bob Wilson',
-      userEmail: 'bob@example.com',
-      ticketType: 'Early Bird',
-      price: 180,
-      status: 'PURCHASED',
-      qrCode: 'QR11111KKKKK',
-      purchaseDate: '2025-01-05T09:15:00Z',
-      usedAt: null
-    },
-    {
-      id: 'ticket_4',
-      orderId: 'order_4',
-      eventId: '3',
-      eventTitle: 'Jazz Night Special',
-      eventDate: '2025-09-10',
-      userId: 'user_101',
-      userName: 'Alice Brown',
-      userEmail: 'alice@example.com',
-      ticketType: 'Premium',
-      price: 65,
-      status: 'REFUNDED',
-      qrCode: 'QR22222LLLLL',
-      purchaseDate: '2025-01-07T16:45:00Z',
-      usedAt: null
-    },
-    {
-      id: 'ticket_5',
-      orderId: 'order_5',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      userId: 'user_202',
-      userName: 'Charlie Davis',
-      userEmail: 'charlie@example.com',
-      ticketType: 'Student',
-      price: 50,
-      status: 'CANCELLED',
-      qrCode: 'QR33333MMMMM',
-      purchaseDate: '2025-01-12T11:20:00Z',
-      usedAt: null
+export default function AdminTicketsPage() {
+  const { userId, isLoaded } = useAuth()
+  const [tickets, setTickets] = useState<TicketData[]>([])
+  const [stats, setStats] = useState<TicketStats>({
+    totalTickets: 0,
+    usedTickets: 0,
+    purchasedTickets: 0,
+    refundedTickets: 0,
+    totalRevenue: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isLoaded) return
+    
+    if (!userId) {
+      redirect('/sign-in')
+      return
     }
-  ]
 
-  // Calculate statistics
-  const totalTickets = tickets.length
-  const usedTickets = tickets.filter(t => t.status === 'USED').length
-  const purchasedTickets = tickets.filter(t => t.status === 'PURCHASED').length
-  const refundedTickets = tickets.filter(t => t.status === 'REFUNDED').length
-  const totalRevenue = tickets
-    .filter(t => t.status === 'PURCHASED' || t.status === 'USED')
-    .reduce((sum, ticket) => sum + ticket.price, 0)
+    const fetchTickets = async () => {
+      try {
+        const response = await fetch('/api/admin/tickets')
+        if (response.status === 403) {
+          redirect('/')
+          return
+        }
+        if (response.ok) {
+          const data = await response.json()
+          setTickets(data.tickets || [])
+          setStats(data.stats || {
+            totalTickets: 0,
+            usedTickets: 0,
+            purchasedTickets: 0,
+            refundedTickets: 0,
+            totalRevenue: 0
+          })
+        } else {
+          setError('Failed to fetch tickets')
+        }
+      } catch (error) {
+        console.error('Error fetching tickets:', error)
+        setError('Failed to fetch tickets')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTickets()
+  }, [userId, isLoaded])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -149,6 +123,22 @@ export default async function AdminTicketsPage() {
       default:
         return `${baseClasses} bg-gray-400 bg-opacity-20 text-gray-300 border-gray-400`
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading tickets...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-red-400 text-xl">{error}</div>
+      </div>
+    )
   }
 
   return (
@@ -201,7 +191,7 @@ export default async function AdminTicketsPage() {
                 <Ticket className="h-10 w-10 text-blue-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Total Tickets</p>
-                  <p className="text-3xl font-bold text-white">{totalTickets}</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalTickets}</p>
                 </div>
               </div>
             </div>
@@ -211,7 +201,7 @@ export default async function AdminTicketsPage() {
                 <CheckCircle className="h-10 w-10 text-green-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Used</p>
-                  <p className="text-3xl font-bold text-white">{usedTickets}</p>
+                  <p className="text-3xl font-bold text-white">{stats.usedTickets}</p>
                 </div>
               </div>
             </div>
@@ -221,7 +211,7 @@ export default async function AdminTicketsPage() {
                 <Clock className="h-10 w-10 text-yellow-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Active</p>
-                  <p className="text-3xl font-bold text-white">{purchasedTickets}</p>
+                  <p className="text-3xl font-bold text-white">{stats.purchasedTickets}</p>
                 </div>
               </div>
             </div>
@@ -231,7 +221,7 @@ export default async function AdminTicketsPage() {
                 <XCircle className="h-10 w-10 text-red-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Refunded</p>
-                  <p className="text-3xl font-bold text-white">{refundedTickets}</p>
+                  <p className="text-3xl font-bold text-white">{stats.refundedTickets}</p>
                 </div>
               </div>
             </div>
@@ -241,7 +231,7 @@ export default async function AdminTicketsPage() {
                 <DollarSign className="h-10 w-10 text-purple-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Revenue</p>
-                  <p className="text-3xl font-bold text-white">${totalRevenue}</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalRevenue}€</p>
                 </div>
               </div>
             </div>
@@ -308,7 +298,8 @@ export default async function AdminTicketsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {tickets.map((ticket) => (
+                  {tickets.length > 0 ? (
+                    tickets.map((ticket) => (
                     <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -338,7 +329,7 @@ export default async function AdminTicketsPage() {
                         <div className="text-sm text-gray-400">{ticket.userEmail}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
-                        ${ticket.price}
+                        {ticket.price}€
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={getStatusBadge(ticket.status)}>
@@ -375,21 +366,22 @@ export default async function AdminTicketsPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-16 text-center">
+                        <div className="flex flex-col items-center">
+                          <Ticket className="h-20 w-20 text-gray-400 mb-4" />
+                          <h3 className="text-xl font-semibold text-white mb-2">No tickets found</h3>
+                          <p className="text-gray-300">Tickets will appear here as customers make purchases.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-
-          {tickets.length === 0 && (
-            <div className="text-center py-16">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 max-w-md mx-auto">
-                <Ticket className="h-20 w-20 text-gray-400 mx-auto mb-6" />
-                <h3 className="text-2xl font-semibold text-white mb-3">No tickets found</h3>
-                <p className="text-gray-300 mb-6">Tickets will appear here as customers make purchases.</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

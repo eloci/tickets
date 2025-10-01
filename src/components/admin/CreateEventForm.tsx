@@ -15,6 +15,13 @@ interface EventFormData {
   image: string
   posterUrl: string     // New poster field
   youtubeUrl: string    // New YouTube field
+  maxTicketsPerPurchase: number  // New field for max tickets per purchase
+  socialLinks: {
+    website?: string
+    facebook?: string
+    twitter?: string
+    instagram?: string
+  }
   categories: {
     name: string
     description: string
@@ -36,6 +43,13 @@ export default function CreateEventForm() {
     image: '',
     posterUrl: '',      // New poster field
     youtubeUrl: '',     // New YouTube field
+    maxTicketsPerPurchase: 10,  // Default to 10 tickets max per purchase
+    socialLinks: {
+      website: '',
+      facebook: '',
+      twitter: '',
+      instagram: ''
+    },
     categories: [
       {
         name: 'General Admission',
@@ -216,6 +230,21 @@ export default function CreateEventForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Max Tickets Per Purchase
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  value={formData.maxTicketsPerPurchase}
+                  onChange={(e) => setFormData({ ...formData, maxTicketsPerPurchase: parseInt(e.target.value) || 1 })}
+                />
+                <p className="text-sm text-gray-500 mt-1">Maximum number of tickets a customer can purchase in one transaction</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Image URL (optional)
                 </label>
                 <input
@@ -253,6 +282,76 @@ export default function CreateEventForm() {
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
                 <p className="text-sm text-gray-500 mt-1">Link to event trailer, previous performances, or promotional video</p>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="md:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Media Links (optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                      value={formData.socialLinks.website}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        socialLinks: { ...formData.socialLinks, website: e.target.value }
+                      })}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Facebook
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                      value={formData.socialLinks.facebook}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        socialLinks: { ...formData.socialLinks, facebook: e.target.value }
+                      })}
+                      placeholder="https://facebook.com/yourpage"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Twitter
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                      value={formData.socialLinks.twitter}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        socialLinks: { ...formData.socialLinks, twitter: e.target.value }
+                      })}
+                      placeholder="https://twitter.com/yourhandle"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Instagram
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                      value={formData.socialLinks.instagram}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        socialLinks: { ...formData.socialLinks, instagram: e.target.value }
+                      })}
+                      placeholder="https://instagram.com/yourhandle"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -303,7 +402,7 @@ export default function CreateEventForm() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-1">
-                        Price ($) *
+                        Price (€) *
                       </label>
                       <input
                         type="number"

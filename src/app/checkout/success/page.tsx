@@ -163,7 +163,7 @@ function CheckoutSuccessContent() {
                     {order.tickets.map((ticket) => (
                       <div key={ticket.id} className="flex justify-between text-gray-900">
                         <span>{ticket.category.name}</span>
-                        <span>${(ticket.category.price || 0).toFixed(2)}</span>
+                        <span>{(ticket.category.price || 0).toFixed(2)}€</span>
                       </div>
                     ))}
                   </div>
@@ -172,7 +172,7 @@ function CheckoutSuccessContent() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold text-lg text-gray-900">
                     <span>Total</span>
-                    <span>${(order.total || 0).toFixed(2)}</span>
+                    <span>{(order.total || 0).toFixed(2)}€</span>
                   </div>
                 </div>
 

@@ -1,22 +1,102 @@
-﻿import Link from 'next/link'
+﻿'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Calendar, MapPin, Users, Ticket } from 'lucide-react'
 import Header from '@/components/Header'
 
-export default async function Home() {
-  // Mock events data - replace with MongoDB query
-  const events: any[] = []
+interface Event {
+  id: string
+  title: string
+  description: string
+  date: string
+  venue: string
+  image?: string
+  price?: number
+  capacity?: number
+  soldTickets?: number
+  ticketTiers?: Array<{
+    id: string
+    name: string
+    price: number
+    capacity: number
+    description: string
+  }>
+  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED'
+}
 
-  // Get homepage content
-  // const homepageContent = await prisma.homepageContent.findFirst({
-  //   where: { isActive: true }
-  // })
+export default function Home() {
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Get featured past events
-  // const featuredPastEvents = await prisma.pastEvent.findMany({
-  //   where: { featured: true, isPublished: true },
-  //   orderBy: { date: 'desc' },
-  //   take: 3
-  // })
+  // Calculate remaining spots for an event
+  const calculateRemainingSpots = (event: Event): number => {
+    if (event.ticketTiers && event.ticketTiers.length > 0) {
+      // Sum up all tier capacities
+      const totalCapacity = event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+      return Math.max(0, totalCapacity - (event.soldTickets || 0))
+    } else if (event.capacity) {
+      // Use single capacity
+      return Math.max(0, event.capacity - (event.soldTickets || 0))
+    }
+    return 0
+  }
+
+  // Calculate total capacity for an event
+  const getTotalCapacity = (event: Event): number => {
+    if (event.ticketTiers && event.ticketTiers.length > 0) {
+      return event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+    } else if (event.capacity) {
+      return event.capacity
+    }
+    return 0
+  }
+
+  // Calculate tickets sold percentage
+  const getTicketsSoldPercentage = (event: Event): number => {
+    const totalCapacity = getTotalCapacity(event)
+    const soldTickets = event.soldTickets || 0
+    return totalCapacity > 0 ? Math.round((soldTickets / totalCapacity) * 100) : 0
+  }
+
+  // Get ribbon color and text based on remaining spots
+  const getRibbonInfo = (remainingSpots: number, totalCapacity: number) => {
+    const percentage = totalCapacity > 0 ? (remainingSpots / totalCapacity) * 100 : 0
+    
+    if (remainingSpots === 0) {
+      return { color: 'bg-red-500', text: 'SOLD OUT' }
+    } else if (percentage <= 10) {
+      return { color: 'bg-red-500', text: `${remainingSpots} LEFT` }
+    } else if (percentage <= 25) {
+      return { color: 'bg-orange-500', text: `${remainingSpots} LEFT` }
+    } else if (percentage <= 50) {
+      return { color: 'bg-yellow-500', text: `${remainingSpots} LEFT` }
+    } else {
+      return { color: 'bg-green-500', text: `${remainingSpots} SPOTS` }
+    }
+  }
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events')
+        if (response.ok) {
+          const data = await response.json()
+          // Show only the first 3 events on homepage
+          setEvents(Array.isArray(data) ? data.slice(0, 3) : [])
+        } else {
+          setEvents([])
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error)
+        setEvents([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
@@ -57,109 +137,70 @@ export default async function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.map((event) => (
-              <div key={event.id} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-200">
-                <div className="h-48 bg-gradient-to-br from-pink-500 to-purple-600 relative">
-                  {event.image ? (
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <div className="text-6xl font-bold mb-2">🎵</div>
-                        <div className="text-lg font-semibold">{event.title}</div>
-                      </div>
+            {loading ? (
+              // Loading state
+              [...Array(3)].map((_, index) => (
+                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden animate-pulse">
+                  <div className="h-48 bg-gray-600"></div>
+                  <div className="p-6">
+                    <div className="h-6 bg-gray-600 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-600 rounded mb-2 w-3/4"></div>
+                    <div className="h-4 bg-gray-600 rounded mb-4 w-1/2"></div>
+                    <div className="flex justify-between items-center">
+                      <div className="h-8 bg-gray-600 rounded w-20"></div>
+                      <div className="h-10 bg-gray-600 rounded w-24"></div>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/30"></div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className="text-white text-2xl font-bold">{new Date(event.date).getDate()}</div>
-                    <div className="text-white text-sm">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                   </div>
                 </div>
-
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
-                  <div className="flex items-center text-gray-300 mb-2">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{event.venue}</span>
-                  </div>
-                  <div className="flex items-center text-gray-300 mb-4">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-2xl font-bold text-white">
-                        $50+
-                      </span>
-                      <span className="text-gray-300 text-sm ml-1">from</span>
-                    </div>
-                    <Link
-                      href={`/events/${event.id}`}
-                      className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
-                    >
-                      Get Tickets
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-12">
-            <Link
-              href="/events"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-900 transition-all duration-200 inline-block"
-            >
-              View All Events
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Featured Past Events Section - Temporarily Disabled */}
-      {/* {featuredPastEvents.length > 0 && (
-        <div className="py-16 bg-white/5 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-4">Past Events Highlights</h2>
-              <p className="text-gray-300 text-lg">Relive the amazing moments from our previous concerts</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredPastEvents.map((event) => {
-                const images = event.images ? JSON.parse(event.images) : []
+              ))
+            ) : events && events.length > 0 ? (
+              events.map((event) => {
+                // Calculate minimum price from ticketTiers or use fallback price
+                const minPrice = event.ticketTiers && event.ticketTiers.length > 0 
+                  ? Math.min(...event.ticketTiers.map(tier => tier.price))
+                  : event.price || 50
+                
+                // Calculate remaining spots and total capacity
+                const remainingSpots = calculateRemainingSpots(event)
+                const totalCapacity = event.ticketTiers && event.ticketTiers.length > 0
+                  ? event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
+                  : event.capacity || 0
+                const ribbonInfo = getRibbonInfo(remainingSpots, totalCapacity)
+                
                 return (
-                  <div key={event.id} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-200">
-                    <div className="h-48 bg-gradient-to-br from-gray-600 to-gray-800 relative overflow-hidden">
-                      {images.length > 0 ? (
-                        <img 
-                          src={images[0]} 
+                  <div key={event.id} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-200 relative">
+                    {/* Availability Ribbon */}
+                    <div className={`absolute top-4 right-4 z-10 ${ribbonInfo.color} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg transform rotate-12`}>
+                      {ribbonInfo.text}
+                    </div>
+                    
+                    <div className="h-48 bg-gradient-to-br from-pink-500 to-purple-600 relative">
+                      {event.image ? (
+                        <img
+                          src={event.image}
                           alt={event.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Homepage image failed to load:', event.image)
+                            // Hide the broken image and show fallback
+                            e.currentTarget.style.display = 'none'
+                          }}
                         />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <Calendar className="h-16 w-16 text-gray-400" />
+                      ) : null}
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center"
+                        style={{ display: event.image ? 'none' : 'flex' }}
+                      >
+                        <div className="text-center text-white">
+                          <div className="text-6xl font-bold mb-2">🎵</div>
+                          <div className="text-lg font-semibold">{event.title}</div>
                         </div>
-                      )}
+                      </div>
                       <div className="absolute inset-0 bg-black/30"></div>
                       <div className="absolute bottom-4 left-4">
                         <div className="text-white text-2xl font-bold">{new Date(event.date).getDate()}</div>
-                        <div className="text-white text-sm">{new Date(event.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
+                        <div className="text-white text-sm">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                       </div>
-                      {event.youtubeUrl && (
-                        <div className="absolute top-4 right-4">
-                          <div className="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
-                            VIDEO
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     <div className="p-6">
@@ -172,47 +213,70 @@ export default async function Home() {
                         <Calendar className="h-4 w-4 mr-2" />
                         <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
                       </div>
-                      
-                      {event.description && (
-                        <p className="text-gray-300 text-sm mb-4 line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
 
-                      {event.youtubeUrl && (
-                        <div className="flex justify-center">
-                          <a
-                            href={event.youtubeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all duration-200 flex items-center"
-                          >
-                            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136C4.495 20.455 12 20.455 12 20.455s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                            </svg>
-                            Watch Video
-                          </a>
+                      {/* Tickets Sold Progress Bar */}
+                      {/* Tickets Sold Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-gray-300 flex items-center">
+                            <Ticket className="h-3 w-3 mr-1" />
+                            Tickets sold
+                          </span>
+                          <span className="text-sm font-bold text-blue-400">{getTicketsSoldPercentage(event)}%</span>
                         </div>
-                      )}
+                        <div className="w-full bg-gray-700/50 rounded-full h-2.5 backdrop-blur-sm border border-gray-600/30">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-2.5 rounded-full transition-all duration-700 ease-out shadow-lg shadow-blue-500/20"
+                            style={{ width: `${getTicketsSoldPercentage(event)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+                          <span>{event.soldTickets || 0} sold</span>
+                          <span>{getTotalCapacity(event)} total</span>
+                        </div>
+                      </div>                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="text-2xl font-bold text-white">
+                            from {minPrice}€+
+                          </span>
+                        </div>
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
+                        >
+                          Get Tickets
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 )
-              })}
-            </div>
+              })
+            ) : (
+              // Empty state
+              <div className="col-span-full text-center py-12">
+                <div className="text-white text-xl mb-4">🎵</div>
+                <h3 className="text-xl font-bold text-white mb-2">No Upcoming Events</h3>
+                <p className="text-gray-300 mb-6">Check back soon for new concerts and events!</p>
+                <Link
+                  href="/events"
+                  className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 inline-block"
+                >
+                  Browse All Events
+                </Link>
+              </div>
+            )}
           </div>
-        </div>
-      )} */}
 
-      {/* Announcement Section - Temporarily Disabled */}
-      {/* {homepageContent?.announcement && (
-        <div className="py-8 bg-gradient-to-r from-pink-600 to-purple-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-white text-lg font-medium">
-              📢 {homepageContent.announcement}
-            </p>
+          <div className="text-center mt-12">
+            <Link
+              href="/events"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-900 transition-all duration-200 inline-block"
+            >
+              View All Events
+            </Link>
           </div>
         </div>
-      )} */}
+      </div>
 
       {/* Features Section */}
       <div className="py-16 bg-white/5 backdrop-blur-sm">

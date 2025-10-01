@@ -100,7 +100,7 @@ export default async function ProfileOrdersPage() {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Spent</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    ${orders.reduce((sum, order) => sum + order.totalAmount, 0)}
+                    {orders.reduce((sum, order) => sum + order.totalAmount, 0)}€
                   </p>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export default async function ProfileOrdersPage() {
                     </div>
                     
                     <div className="mt-4 md:mt-0 md:text-right">
-                      <div className="text-2xl font-bold text-gray-800">${order.totalAmount}</div>
+                      <div className="text-2xl font-bold text-gray-800">{order.totalAmount}€</div>
                       <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
                         order.status === 'CONFIRMED'
                           ? 'bg-green-100 text-green-800'
@@ -162,7 +162,7 @@ export default async function ProfileOrdersPage() {
                           <div key={ticket.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
                               <span className="font-medium text-gray-800">{ticket.ticketType}</span>
-                              <span className="text-gray-600 ml-2">• ${ticket.price}</span>
+                              <span className="text-gray-600 ml-2">• {ticket.price}€</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-gray-500">QR: {ticket.qrCode}</span>
