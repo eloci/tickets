@@ -1,112 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth, clerkClient } from '@clerk/nextjs/server'
-import { EventsStorage } from '@/lib/storage/events'
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import connectDB from "@/lib/database";
+import { Event } from "@/lib/schemas";
+import mongoose from "mongoose";
 
+// DELETE /api/admin/events/[id]
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
+  const headers = { "Content-Type": "application/json" } as const;
+
   try {
-    const { userId } = await auth()
-    
+    // Auth check
+    const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
     }
 
-    const clerk = await clerkClient()
-    const user = await clerk.users.getUser(userId)
-    if (user.publicMetadata?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin required' }, { status: 403 })
+    // Validate id param
+    const id = params?.id;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid or missing event id" }, { status: 400, headers });
     }
 
-    const { id: eventId } = await params
-    
-    // Check if event exists
-    const existingEvent = EventsStorage.getById(eventId)
-    if (!existingEvent) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    // Delete the event
-    const deleted = EventsStorage.delete(eventId)
-    
+    // DB and delete
+    await connectDB();
+    const deleted = await Event.findByIdAndDelete(id);
     if (!deleted) {
-      return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
+      return NextResponse.json({ error: "Event not found" }, { status: 404, headers });
     }
 
-    return NextResponse.json({ 
-      message: 'Event deleted successfully',
-      deletedId: eventId 
-    }, { status: 200 })
-    
+    return NextResponse.json(
+      { success: true, message: "Event deleted", event: deleted },
+      { status: 200, headers }
+    );
   } catch (error) {
-    console.error('❌ Error deleting event:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth()
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const clerk = await clerkClient()
-    const user = await clerk.users.getUser(userId)
-    if (user.publicMetadata?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin required' }, { status: 403 })
-    }
-
-    const { id: eventId } = await params
-    const event = EventsStorage.getById(eventId)
-    
-    if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(event)
-    
-  } catch (error) {
-    console.error('❌ Error fetching event:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { userId } = await auth()
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const clerk = await clerkClient()
-    const user = await clerk.users.getUser(userId)
-    if (user.publicMetadata?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin required' }, { status: 403 })
-    }
-
-    const { id: eventId } = await params
-    const data = await request.json()
-    
-    const updatedEvent = EventsStorage.update(eventId, data)
-    
-    if (!updatedEvent) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(updatedEvent)
-    
-  } catch (error) {
-    console.error('❌ Error updating event:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error("Error deleting event:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete event",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500, headers }
+    );
   }
 }

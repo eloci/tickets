@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createCheckoutSession, CreateCheckoutSessionData } from '@/lib/stripe'
 
-interface OrderItem {
-  categoryId: string
-  quantity: number
-  price: number
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

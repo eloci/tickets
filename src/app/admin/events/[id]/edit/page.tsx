@@ -12,14 +12,14 @@ interface EditEventPageProps {
 export default async function EditEventPage({ params }: EditEventPageProps) {
   try {
     const { userId } = await auth()
-    
+
     if (!userId) {
       redirect('/sign-in')
     }
 
     const clerk = await clerkClient()
     const user = await clerk.users.getUser(userId)
-    
+
     // Check if user is admin
     if (user.publicMetadata?.role !== 'admin') {
       redirect('/')

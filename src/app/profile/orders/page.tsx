@@ -1,219 +1,360 @@
-import Header from '@/components/Header'
-import { auth, currentUser } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useUser } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, MapPin, Ticket, Download, Eye, CheckCircle } from 'lucide-react'
+import Header from '@/components/Header'
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Ticket,
+  Eye,
+  Download,
+  Smartphone,
+  Search,
+  ExternalLink,
+  QrCode,
+  Mail
+} from 'lucide-react'
 
-export default async function ProfileOrdersPage() {
-  const { userId } = await auth()
-  
-  if (!userId) {
-    redirect('/sign-in')
+interface Order {
+  id: string
+  eventTitle: string
+  eventDate: string
+  eventTime: string
+  venue: string
+  totalAmount: number
+  currency: string
+  status: 'confirmed' | 'pending' | 'cancelled'
+  ticketsCount: number
+  purchaseDate: string
+  eventImage?: string
+  tickets: OrderTicket[]
+}
+
+interface OrderTicket {
+  id: string
+  type: string
+  seat?: string
+  price: number
+  qrCode: string
+  used: boolean
+  usedAt?: string
+}
+
+export default function OrdersPage() {
+  const { user, isLoaded } = useUser()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Fetch real data from API
+  useEffect(() => {
+    if (isLoaded && user) {  // Restore user requirement for real data
+      const fetchOrders = async () => {
+        try {
+          const params = new URLSearchParams()
+          if (debouncedSearchTerm) params.append('search', debouncedSearchTerm)
+          if (filterStatus !== 'all') params.append('status', filterStatus)
+
+          const response = await fetch(`/api/orders?${params.toString()}`)
+          if (response.ok) {
+            const data = await response.json()
+            // Ensure data is always an array
+            setOrders(Array.isArray(data) ? data : [])
+          } else {
+            console.error('Failed to fetch orders')
+            setOrders([])
+          }
+        } catch (error) {
+          console.error('Error fetching orders:', error)
+          setOrders([])
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      fetchOrders()
+    } else if (isLoaded) {
+      // If loaded but no user, stop loading
+      setLoading(false)
+    }
+  }, [isLoaded, user, debouncedSearchTerm, filterStatus])  // Restore user dependency
+
+  if (!isLoaded || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <Header />
+        <div className="flex items-center justify-center py-32">
+          <div className="text-white text-xl">Loading your orders...</div>
+        </div>
+      </div>
+    )
   }
-
-  const user = await currentUser()
 
   if (!user) {
-    redirect('/sign-in')
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <Header />
+        <div className="flex items-center justify-center py-32">
+          <div className="text-white text-xl">Please sign in to view your orders</div>
+        </div>
+      </div>
+    )
   }
 
-  // Mock orders data - replace with MongoDB query filtered by userId
-  const orders = [
-    {
-      id: 'order_1',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      venue: 'Central Park Amphitheater',
-      location: 'New York, NY',
-      totalAmount: 150,
-      status: 'CONFIRMED',
-      orderDate: '2025-01-10T10:00:00Z',
-      tickets: [
-        { id: 'ticket_1', ticketType: 'General Admission', price: 75, qrCode: 'QR12345' },
-        { id: 'ticket_2', ticketType: 'General Admission', price: 75, qrCode: 'QR67890' }
-      ]
-    },
-    {
-      id: 'order_2',
-      eventId: '2',
-      eventTitle: 'Rock Concert Extravaganza',
-      eventDate: '2025-08-20',
-      venue: 'Madison Square Garden',
-      location: 'New York, NY',
-      totalAmount: 130,
-      status: 'PENDING',
-      orderDate: '2025-01-12T14:30:00Z',
-      tickets: [
-        { id: 'ticket_3', ticketType: 'VIP', price: 65, qrCode: 'QR11111' },
-        { id: 'ticket_4', ticketType: 'VIP', price: 65, qrCode: 'QR22222' }
-      ]
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200'
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
-  ]
+  }
+
+  const handleResendTickets = async (orderId: string) => {
+    try {
+      const response = await fetch('/api/send-ticket-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: user.emailAddresses?.[0]?.emailAddress,
+          orderId: orderId
+        }),
+      })
+
+      if (response.ok) {
+        alert('Tickets resent successfully!')
+      } else {
+        alert('Failed to resend tickets. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error resending tickets:', error)
+      alert('Error resending tickets. Please try again.')
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <Link 
-              href="/profile"
-              className="inline-flex items-center text-purple-600 hover:text-purple-800 transition-colors mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Profile
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-800">My Orders</h1>
-            <p className="text-gray-600 mt-2">View and manage your ticket orders</p>
-          </div>
 
-          {/* Orders Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex items-center">
-                <Ticket className="h-8 w-8 text-purple-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center mb-8">
+          <Link href="/profile" className="text-white/70 hover:text-white mr-4">
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <h1 className="text-3xl font-bold text-white">My Orders</h1>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
+            <div className="flex space-x-4 w-full md:w-auto">
+              <div className="relative flex-1 md:w-80">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50" />
+                <input
+                  type="text"
+                  placeholder="Search orders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                />
               </div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">All Status</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Confirmed Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {orders.filter(o => o.status === 'CONFIRMED').length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex items-center">
-                <Calendar className="h-8 w-8 text-blue-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {orders.reduce((sum, order) => sum + order.totalAmount, 0)}€
-                  </p>
-                </div>
-              </div>
+            <div className="text-white/70 text-sm">
+              {orders.length} order{orders.length !== 1 ? 's' : ''} found
             </div>
           </div>
+        </div>
 
-          {/* Orders List */}
-          {orders.length > 0 ? (
-            <div className="space-y-6">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">{order.eventTitle}</h3>
-                      <div className="flex items-center text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        <span>{new Date(order.eventDate).toLocaleDateString()}</span>
-                        <MapPin className="h-4 w-4 ml-4 mr-2" />
-                        <span>{order.venue}, {order.location}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 md:mt-0 md:text-right">
-                      <div className="text-2xl font-bold text-gray-800">{order.totalAmount}€</div>
-                      <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                        order.status === 'CONFIRMED'
-                          ? 'bg-green-100 text-green-800'
-                          : order.status === 'PENDING'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Order Details */}
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Order ID</p>
-                        <p className="font-medium text-gray-800">{order.id}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Order Date</p>
-                        <p className="font-medium text-gray-800">
-                          {new Date(order.orderDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Tickets */}
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        Tickets ({order.tickets.length})
-                      </p>
-                      <div className="space-y-2">
-                        {order.tickets.map((ticket) => (
-                          <div key={ticket.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <span className="font-medium text-gray-800">{ticket.ticketType}</span>
-                              <span className="text-gray-600 ml-2">• {ticket.price}€</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-500">QR: {ticket.qrCode}</span>
-                              <Link
-                                href={`/tickets/${ticket.id}`}
-                                className="text-purple-600 hover:text-purple-800"
-                                title="View Ticket"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/events/${order.eventId}`}
-                        className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Event
-                      </Link>
-                      
-                      {order.status === 'CONFIRMED' && (
-                        <button className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                          <Download className="h-4 w-4 mr-2" />
-                          Download Tickets
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-lg shadow-md">
-              <Ticket className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">No orders yet</h3>
-              <p className="text-gray-500 mb-6">You haven't purchased any tickets yet.</p>
+        {/* Orders List */}
+        <div className="space-y-6">
+          {orders.length === 0 ? (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 text-center">
+              <Ticket className="h-16 w-16 text-white/50 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No orders found</h3>
+              <p className="text-white/70 mb-6">
+                {searchTerm || filterStatus !== 'all'
+                  ? 'Try adjusting your search or filter criteria.'
+                  : 'You haven\'t made any ticket purchases yet.'
+                }
+              </p>
               <Link
                 href="/events"
-                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center"
               >
+                <Calendar className="h-4 w-4 mr-2" />
                 Browse Events
               </Link>
             </div>
+          ) : (
+            (orders || []).map((order: any) => (
+              <div key={order.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between space-y-6 lg:space-y-0">
+                  {/* Order Info */}
+                  <div className="flex items-start space-x-4 flex-1">
+                    {order.eventImage && (
+                      <img
+                        src={order.eventImage}
+                        alt={order.eventTitle}
+                        className="w-20 h-20 rounded-xl object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-2">{order.eventTitle}</h3>
+                          <div className="flex flex-wrap items-center text-white/70 text-sm space-x-4 mb-2">
+                            <span className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              {new Date(order.eventDate).toLocaleDateString()} at {order.eventTime}
+                            </span>
+                            <span className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {order.venue}
+                            </span>
+                            <span className="flex items-center">
+                              <Ticket className="h-4 w-4 mr-1" />
+                              {order.ticketsCount} ticket{order.ticketsCount > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-white mb-1">
+                            {order.currency} ${order.totalAmount.toFixed(2)}
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-white/50 text-xs mb-4">
+                        Order #{order.id} • Purchased on {new Date(order.purchaseDate).toLocaleDateString()}
+                      </div>
+
+                      {/* Tickets */}
+                      <div className="bg-white/5 rounded-xl p-4 mb-4">
+                        <h4 className="text-white font-medium mb-3">Tickets</h4>
+                        <div className="space-y-2">
+                          {order.tickets.map((ticket: any) => (
+                            <div key={ticket.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <QrCode className="h-5 w-5 text-white/70" />
+                                <div>
+                                  <span className="text-white font-medium">{ticket.type}</span>
+                                  {ticket.seat && <span className="text-white/70 ml-2">• {ticket.seat}</span>}
+                                  <div className="text-white/50 text-xs">#{ticket.id}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-white font-medium">${ticket.price.toFixed(2)}</div>
+                                {ticket.used ? (
+                                  <div className="text-green-400 text-xs">
+                                    Used {ticket.usedAt && new Date(ticket.usedAt).toLocaleDateString()}
+                                  </div>
+                                ) : (
+                                  <div className="text-blue-400 text-xs">Valid</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3">
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Link>
+                        <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                          <Download className="h-4 w-4 mr-2" />
+                          Download PDF
+                        </button>
+                        <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                          <Smartphone className="h-4 w-4 mr-2" />
+                          Add to Wallet
+                        </button>
+                        <button
+                          onClick={() => handleResendTickets(order.id)}
+                          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Resend Email
+                        </button>
+                        {new Date(order.eventDate) > new Date() && (
+                          <Link
+                            href={`/events/${order.eventTitle.toLowerCase().replace(/\s+/g, '-')}`}
+                            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Event Details
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
+
+        {/* Summary */}
+        {orders.length > 0 && (
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mt-8">
+            <h3 className="text-xl font-bold text-white mb-4">Order Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-400">
+                  {orders.reduce((acc: number, order: any) => acc + order.ticketsCount, 0)}
+                </div>
+                <div className="text-white/70 text-sm">Total Tickets</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-400">
+                  ${orders.reduce((acc: number, order: any) => acc + order.totalAmount, 0).toFixed(2)}
+                </div>
+                <div className="text-white/70 text-sm">Total Spent</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-400">
+                  {orders.filter((order: any) => new Date(order.eventDate) > new Date()).length}
+                </div>
+                <div className="text-white/70 text-sm">Upcoming Events</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,11 +1,11 @@
 import Header from '@/components/Header'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { ShoppingBag, DollarSign, Calendar, User, Eye, Download, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { ShoppingBag, DollarSign, Eye, Download, CheckCircle, Clock } from 'lucide-react'
 
 export default async function AdminOrdersPage() {
   const { userId } = await auth()
-  
+
   if (!userId) {
     redirect('/sign-in')
   }
@@ -76,7 +76,7 @@ export default async function AdminOrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -95,7 +95,7 @@ export default async function AdminOrdersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-500" />
@@ -105,7 +105,7 @@ export default async function AdminOrdersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-orange-500" />
@@ -115,7 +115,7 @@ export default async function AdminOrdersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <DollarSign className="h-8 w-8 text-purple-500" />
@@ -132,7 +132,7 @@ export default async function AdminOrdersPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">All Orders</h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -196,13 +196,12 @@ export default async function AdminOrdersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        order.status === 'CONFIRMED'
-                          ? 'bg-green-100 text-green-800'
-                          : order.status === 'PENDING'
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${order.status === 'CONFIRMED'
+                        ? 'bg-green-100 text-green-800'
+                        : order.status === 'PENDING'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
-                      }`}>
+                        }`}>
                         {order.status}
                       </span>
                     </td>

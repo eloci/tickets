@@ -151,9 +151,9 @@ export default function EventsList({ initialEvents }: EventsListProps) {
                         <p className="text-xs text-gray-500">Capacity</p>
                       </div>
                       <span className={`px-3 py-1 text-sm rounded-full ${event.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                          event.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
-                            event.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
+                        event.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                          event.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
                         }`}>
                         {event.status}
                       </span>
@@ -191,8 +191,8 @@ export default function EventsList({ initialEvents }: EventsListProps) {
                     onClick={() => handleToggleVisibility(event.id, event.status)}
                     disabled={togglingVisibilityId === event.id}
                     className={`p-2 transition-colors ${event.status === 'PUBLISHED'
-                        ? 'text-green-600 hover:text-green-700'
-                        : 'text-gray-400 hover:text-green-600'
+                      ? 'text-green-600 hover:text-green-700'
+                      : 'text-gray-400 hover:text-green-600'
                       }`}
                     title={event.status === 'PUBLISHED' ? 'Hide from homepage' : 'Show on homepage'}
                   >

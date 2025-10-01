@@ -4,20 +4,16 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  Ticket, 
-  QrCode, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  User, 
-  Calendar, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
+import {
+  Ticket,
+  QrCode,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Search,
+  Download,
+  Eye,
   ArrowLeft,
-  TrendingUp,
   DollarSign
 } from 'lucide-react'
 
@@ -62,7 +58,7 @@ export default function AdminTicketsPage() {
 
   useEffect(() => {
     if (!isLoaded) return
-    
+
     if (!userId) {
       redirect('/sign-in')
       return
@@ -195,7 +191,7 @@ export default function AdminTicketsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <CheckCircle className="h-10 w-10 text-green-400" />
@@ -205,7 +201,7 @@ export default function AdminTicketsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <Clock className="h-10 w-10 text-yellow-400" />
@@ -215,7 +211,7 @@ export default function AdminTicketsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <XCircle className="h-10 w-10 text-red-400" />
@@ -225,7 +221,7 @@ export default function AdminTicketsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <DollarSign className="h-10 w-10 text-purple-400" />
@@ -300,72 +296,72 @@ export default function AdminTicketsPage() {
                 <tbody className="divide-y divide-white/10">
                   {tickets.length > 0 ? (
                     tickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                              <Ticket className="h-5 w-5 text-white" />
+                      <tr key={ticket.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                <Ticket className="h-5 w-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-white">
+                                {ticket.id}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                {ticket.ticketType}
+                              </div>
                             </div>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-white">
-                              {ticket.id}
-                            </div>
-                            <div className="text-sm text-gray-400">
-                              {ticket.ticketType}
-                            </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-white">{ticket.eventTitle}</div>
+                          <div className="text-sm text-gray-400">
+                            {new Date(ticket.eventDate).toLocaleDateString()}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white">{ticket.eventTitle}</div>
-                        <div className="text-sm text-gray-400">
-                          {new Date(ticket.eventDate).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-white">{ticket.userName}</div>
-                        <div className="text-sm text-gray-400">{ticket.userEmail}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
-                        {ticket.price}€
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={getStatusBadge(ticket.status)}>
-                          <span className="flex items-center">
-                            {getStatusIcon(ticket.status)}
-                            <span className="ml-1">{ticket.status}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-white">{ticket.userName}</div>
+                          <div className="text-sm text-gray-400">{ticket.userEmail}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
+                          {ticket.price}€
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={getStatusBadge(ticket.status)}>
+                            <span className="flex items-center">
+                              {getStatusIcon(ticket.status)}
+                              <span className="ml-1">{ticket.status}</span>
+                            </span>
                           </span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {new Date(ticket.purchaseDate).toLocaleDateString()}
-                        <div className="text-xs text-gray-400">
-                          {new Date(ticket.purchaseDate).toLocaleTimeString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                        <button
-                          className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                          title="View QR Code"
-                        >
-                          <QrCode className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                          title="Download"
-                        >
-                          <Download className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                          {new Date(ticket.purchaseDate).toLocaleDateString()}
+                          <div className="text-xs text-gray-400">
+                            {new Date(ticket.purchaseDate).toLocaleTimeString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                          <button
+                            className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                            title="View QR Code"
+                          >
+                            <QrCode className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                            title="Download"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
                     ))
                   ) : (
                     <tr>

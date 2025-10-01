@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { 
-  Calendar, 
-  Users, 
-  DollarSign, 
-  Plus, 
-  Search, 
-  Eye, 
-  Edit, 
-  Trash2, 
+import {
+  Calendar,
+  Users,
+  DollarSign,
+  Plus,
+  Search,
+  Eye,
+  Edit,
+  Trash2,
   ArrowLeft,
   Star,
   TrendingUp,
@@ -46,13 +46,25 @@ export default function AdminEventsPage() {
   const fetchEvents = async () => {
     try {
       const response = await fetch('/api/admin/events')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch events')
       }
-      
-      const eventsData = await response.json()
-      setEvents(eventsData)
+
+      const data = await response.json()
+      // Check if the response has the expected structure and events is an array
+      if (data && data.success && Array.isArray(data.events)) {
+        setEvents(data.events.map((event: any) => ({
+          ...event,
+          id: event._id || event.id, // Ensure we always have an id property
+          soldTickets: event.soldTickets || 0,
+          status: event.status || 'DRAFT'
+        })))
+      } else {
+        console.error('❌ Unexpected response format:', data)
+        setEvents([]) // Set empty array as fallback
+        setError('Invalid data format received from server')
+      }
     } catch (err) {
       console.error('❌ Error fetching events:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch events')
@@ -65,22 +77,32 @@ export default function AdminEventsPage() {
     try {
       setDeletingId(eventId)
       setError(null)
-      
+
       const response = await fetch(`/api/admin/events/${eventId}`, {
         method: 'DELETE',
       })
 
+      // Check if the response is JSON before trying to parse it
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        // Not JSON, get text content for better error handling
+        const textContent = await response.text()
+        console.error('Non-JSON response:', textContent)
+        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete event')
+        throw new Error(result.error || 'Failed to delete event')
       }
 
       // Remove the event from local state
       setEvents(events.filter(event => event.id !== eventId))
-      
+
       // Show success message
       console.log('✅ Event deleted successfully')
-      
+
     } catch (err) {
       console.error('❌ Error deleting event:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete event')
@@ -195,18 +217,18 @@ export default function AdminEventsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <Eye className="h-10 w-10 text-green-400" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-300">Published</p>
                   <p className="text-3xl font-bold text-white">{publishedEvents}</p>
-                  <p className="text-xs text-gray-400">{Math.round((publishedEvents/totalEvents)*100)}% of total</p>
+                  <p className="text-xs text-gray-400">{Math.round((publishedEvents / totalEvents) * 100)}% of total</p>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <Edit className="h-10 w-10 text-yellow-400" />
@@ -217,7 +239,7 @@ export default function AdminEventsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center">
                 <DollarSign className="h-10 w-10 text-purple-400" />
@@ -269,8 +291,8 @@ export default function AdminEventsPage() {
               <div key={event.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
                 <div className="relative h-48 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 overflow-hidden">
                   {event.image ? (
-                    <img 
-                      src={event.image} 
+                    <img
+                      src={event.image}
                       alt={event.title}
                       className="w-full h-full object-cover"
                     />
@@ -293,27 +315,27 @@ export default function AdminEventsPage() {
                     <h3 className="text-xl font-bold">{event.title}</h3>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <p className="text-gray-300 mb-4 line-clamp-2">{event.description}</p>
-                  
+
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center text-gray-300">
                       <Calendar className="h-4 w-4 mr-3 text-blue-400" />
                       <span>{new Date(event.date).toLocaleDateString()}</span>
                     </div>
-                    
+
                     <div className="flex items-center text-gray-300">
                       <Users className="h-4 w-4 mr-3 text-green-400" />
                       <span>{event.venue}, {event.location}</span>
                     </div>
-                    
+
                     <div className="flex items-center text-gray-300">
                       <DollarSign className="h-4 w-4 mr-3 text-purple-400" />
                       <span>{event.price}€ • {event.soldTickets}/{event.capacity} sold</span>
                     </div>
                   </div>
-                  
+
                   {/* Progress bar */}
                   <div className="mb-4">
                     <div className="flex justify-between text-sm text-gray-300 mb-2">
@@ -321,13 +343,13 @@ export default function AdminEventsPage() {
                       <span>{event.capacity ? Math.round((event.soldTickets / event.capacity) * 100) : 0}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300" 
+                      <div
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${event.capacity ? (event.soldTickets / event.capacity) * 100 : 0}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   {/* Action Buttons */}
                   <div className="flex justify-between items-center">
                     <div className="flex space-x-2">
@@ -358,7 +380,7 @@ export default function AdminEventsPage() {
                         )}
                       </button>
                     </div>
-                    
+
                     <div className="text-right">
                       <div className="text-sm text-gray-400">
                         Revenue: <span className="text-white font-medium">{event.price ? (event.soldTickets * event.price).toLocaleString() : 'N/A'}€</span>
@@ -369,7 +391,7 @@ export default function AdminEventsPage() {
               </div>
             ))}
           </div>
-          
+
           {events.length === 0 && (
             <div className="text-center py-16">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 max-w-md mx-auto">

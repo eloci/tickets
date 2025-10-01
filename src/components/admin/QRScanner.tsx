@@ -15,7 +15,7 @@ export default function QRScanner() {
     try {
       const result = validateQRCode(qrData)
       setScanResult(result)
-      
+
       if (result.isValid && !result.isExpired) {
         toast.success('✅ Valid ticket!')
       } else if (result.isExpired) {
@@ -41,7 +41,7 @@ export default function QRScanner() {
 
   const getStatusIcon = () => {
     if (!scanResult) return null
-    
+
     if (scanResult.isValid && !scanResult.isExpired) {
       return <CheckCircle className="h-8 w-8 text-green-500" />
     } else if (scanResult.isExpired) {
@@ -53,7 +53,7 @@ export default function QRScanner() {
 
   const getStatusColor = () => {
     if (!scanResult) return 'border-gray-300'
-    
+
     if (scanResult.isValid && !scanResult.isExpired) {
       return 'border-green-500 bg-green-50'
     } else if (scanResult.isExpired) {

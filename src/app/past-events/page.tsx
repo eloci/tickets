@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma'
 import Header from '@/components/Header'
 import Link from 'next/link'
 import { Calendar, MapPin, Play } from 'lucide-react'
@@ -6,14 +5,6 @@ import { Calendar, MapPin, Play } from 'lucide-react'
 export default async function PastEventsPage() {
   // pastEvent model has been removed from schema
   const pastEvents: any[] = []
-
-  /* COMMENTED OUT - pastEvent model doesn't exist
-  // Get all published past events
-  const pastEvents = await prisma.pastEvent.findMany({
-    where: { isPublished: true },
-    orderBy: { date: 'desc' }
-  })
-  */
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">

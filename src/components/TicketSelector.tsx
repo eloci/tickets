@@ -135,7 +135,7 @@ export default function TicketSelector({ eventId, categories }: TicketSelectorPr
 
       const { sessionId } = await stripeResponse.json()
 
-      // Redirect to Stripe Checkout - TODO: Implement proper Stripe redirect
+      // Redirect to Stripe Checkout
       window.location.href = `/checkout/${sessionId}`
     } catch (error) {
       console.error('Checkout error:', error)

@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer'
-import { createWalletDownloadUrls } from './wallet-generator'
 
 export interface TicketEmailData {
   customerEmail: string
@@ -364,17 +363,12 @@ function generateTicketEmailHTML(data: TicketEmailData): string {
  */
 export async function sendTicketEmail(data: TicketEmailData): Promise<void> {
   try {
-    console.log('Preparing to send ticket email...')
     const transporter = createTransporter()
     
-    // Test connection first
     await transporter.verify()
-    console.log('SMTP connection verified successfully')
     
-    // Generate email content
     const htmlContent = generateTicketEmailHTML(data)
     
-    // Prepare attachments (QR codes as inline images)
     const attachments = data.tickets.map((ticket, index) => ({
       filename: `ticket-${index + 1}-qr.png`,
       content: ticket.qrCodeImage.split(',')[1], // Remove data:image/png;base64, prefix
@@ -382,7 +376,6 @@ export async function sendTicketEmail(data: TicketEmailData): Promise<void> {
       cid: `qr-${ticket.ticketId}` // For referencing in HTML
     }))
 
-    // Email options
     const mailOptions = {
       from: {
         name: 'Event Tickets',
@@ -398,62 +391,11 @@ export async function sendTicketEmail(data: TicketEmailData): Promise<void> {
         'Importance': 'high'
       }
     }
-
-    console.log('Sending email to:', data.customerEmail)
-    console.log('From:', mailOptions.from)
     
-    // Send email
     const result = await transporter.sendMail(mailOptions)
-    console.log('Ticket email sent successfully:', result.messageId)
     
   } catch (error) {
     console.error('Error sending ticket email:', error)
     throw new Error(`Failed to send ticket email: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
-}
-
-/**
- * Test email configuration
- */
-export async function testEmailConnection(): Promise<boolean> {
-  try {
-    console.log('Testing email connection...')
-    const transporter = createTransporter()
-    await transporter.verify()
-    console.log('Email configuration is valid')
-    return true
-  } catch (error) {
-    console.error('Email configuration error:', error)
-    return false
-  }
-}
-
-/**
- * Send a simple test email
- */
-export async function sendTestEmail(toEmail: string): Promise<void> {
-  try {
-    const transporter = createTransporter()
-    
-    const mailOptions = {
-      from: {
-        name: 'Event Tickets Test',
-        address: process.env.SENDER_EMAIL || process.env.SMTP_USER || 'noreply@eventtickets.com'
-      },
-      to: toEmail,
-      subject: '🧪 Test Email - Event Tickets System',
-      html: `
-        <h2>Test Email Successful! ✅</h2>
-        <p>This is a test email from your Event Tickets system.</p>
-        <p>If you received this email, your SMTP configuration is working correctly.</p>
-        <p>Time sent: ${new Date().toISOString()}</p>
-      `
-    }
-
-    const result = await transporter.sendMail(mailOptions)
-    console.log('Test email sent successfully:', result.messageId)
-  } catch (error) {
-    console.error('Error sending test email:', error)
-    throw error
   }
 }

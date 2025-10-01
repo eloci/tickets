@@ -5,9 +5,8 @@ import { ArrowLeft, Save, Eye, Globe } from 'lucide-react'
 import HomepageContentForm from '@/components/admin/HomepageContentForm'
 
 export default async function HomepageContentPage() {
-  const user = await requireAdmin()
-  
-  // TODO: Implement homepage content with MongoDB
+  await requireAdmin()
+
   await connectDB()
   let homepageContent
   try {
@@ -41,25 +40,6 @@ export default async function HomepageContentPage() {
       isActive: true
     }
   }
-
-  /* COMMENTED OUT - homepageContent model doesn't exist
-  // Get current homepage content or create default
-  let homepageContent = await prisma.homepageContent.findFirst({
-    where: { isActive: true }
-  })
-
-  if (!homepageContent) {
-    // Create default homepage content if none exists
-    homepageContent = await prisma.homepageContent.create({
-      data: {
-        heroTitle: "Your Gateway to Amazing Concerts",
-        heroSubtitle: "Discover and book tickets for the hottest concerts and events in your city",
-        heroButtonText: "Browse Events",
-        isActive: true
-      }
-    })
-  }
-  */
 
   return (
     <div className="min-h-screen bg-gray-50">

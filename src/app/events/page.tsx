@@ -62,7 +62,7 @@ export default function EventsPage() {
   // Get ribbon color and text based on remaining spots
   const getRibbonInfo = (remainingSpots: number, totalCapacity: number) => {
     const percentage = totalCapacity > 0 ? (remainingSpots / totalCapacity) * 100 : 0
-    
+
     if (remainingSpots === 0) {
       return { color: 'bg-red-500', text: 'SOLD OUT' }
     } else if (percentage <= 10) {
@@ -107,7 +107,7 @@ export default function EventsPage() {
         <div className="absolute inset-0 bg-black/20 -z-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-                        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               Discover Amazing
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
                 {' '}Events
@@ -156,24 +156,24 @@ export default function EventsPage() {
             ) : events && events.length > 0 ? (
               events.map((event) => {
                 // Calculate minimum price from ticketTiers or use fallback price
-                const minPrice = event.ticketTiers && event.ticketTiers.length > 0 
+                const minPrice = event.ticketTiers && event.ticketTiers.length > 0
                   ? Math.min(...event.ticketTiers.map(tier => tier.price))
                   : event.price || 50
-                
+
                 // Calculate remaining spots and total capacity
                 const remainingSpots = calculateRemainingSpots(event)
                 const totalCapacity = event.ticketTiers && event.ticketTiers.length > 0
                   ? event.ticketTiers.reduce((sum, tier) => sum + tier.capacity, 0)
                   : event.capacity || 0
                 const ribbonInfo = getRibbonInfo(remainingSpots, totalCapacity)
-                
+
                 return (
                   <div key={event.id} className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:transform hover:scale-105 transition-all duration-200 relative">
                     {/* Availability Ribbon */}
                     <div className={`absolute top-4 right-4 z-10 ${ribbonInfo.color} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg transform rotate-12`}>
                       {ribbonInfo.text}
                     </div>
-                    
+
                     <div className="h-48 bg-gradient-to-br from-pink-500 to-purple-600 relative">
                       {event.image ? (
                         <img
@@ -187,7 +187,7 @@ export default function EventsPage() {
                           }}
                         />
                       ) : null}
-                      <div 
+                      <div
                         className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center"
                         style={{ display: event.image ? 'none' : 'flex' }}
                       >
@@ -224,7 +224,7 @@ export default function EventsPage() {
                           <span className="text-sm font-bold text-blue-400">{getTicketsSoldPercentage(event)}%</span>
                         </div>
                         <div className="w-full bg-gray-700/50 rounded-full h-2.5 backdrop-blur-sm border border-gray-600/30">
-                          <div 
+                          <div
                             className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-2.5 rounded-full transition-all duration-700 ease-out shadow-lg shadow-blue-500/20"
                             style={{ width: `${getTicketsSoldPercentage(event)}%` }}
                           ></div>

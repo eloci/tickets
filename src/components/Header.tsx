@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useUser, SignOutButton } from '@clerk/nextjs'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Ticket, User, LogOut, ChevronDown, CreditCard, Calendar, Menu, X, Settings, Shield, BarChart3, Globe, FileText } from 'lucide-react'
+import { Ticket, User, LogOut, ChevronDown, CreditCard, Calendar, Menu, X, Settings, Shield, Globe, FileText } from 'lucide-react'
 
 export default function Header() {
   const { user, isLoaded } = useUser()

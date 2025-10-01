@@ -50,7 +50,7 @@ export default function AdminDashboard() {
       router.push('/sign-in')
       return
     }
-    
+
     if (isLoaded && user && user.publicMetadata?.role === 'admin') {
       fetchDashboardData()
     }
@@ -59,11 +59,11 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       const response = await fetch('/api/admin/dashboard')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data')
       }
-      
+
       const data = await response.json()
       setDashboardData(data)
     } catch (err) {
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 text-center">
           <p className="text-white text-lg">Error loading dashboard: {error}</p>
-          <button 
+          <button
             onClick={fetchDashboardData}
             className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
           >
@@ -139,243 +139,241 @@ export default function AdminDashboard() {
 
       <div className="relative -mt-8 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-12">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <Users className="h-10 w-10 text-blue-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Total Users</p>
-                <p className="text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
-                  <span className="text-xs text-green-400">+12% this month</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <Calendar className="h-10 w-10 text-green-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Total Events</p>
-                <p className="text-3xl font-bold text-white">{stats.totalEvents}</p>
-                <p className="text-xs text-gray-400">{stats.upcomingEvents} upcoming</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <TicketIcon className="h-10 w-10 text-purple-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Total Orders</p>
-                <p className="text-3xl font-bold text-white">{stats.totalOrders}</p>
-                <p className="text-xs text-gray-400">{stats.totalTickets} tickets sold</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <DollarSign className="h-10 w-10 text-yellow-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Total Revenue</p>
-                <p className="text-3xl font-bold text-white">{stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}€</p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
-                  <span className="text-xs text-green-400">+8% this month</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <Calendar className="h-10 w-10 text-indigo-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Upcoming Events</p>
-                <p className="text-3xl font-bold text-white">{stats.upcomingEvents}</p>
-                <p className="text-xs text-gray-400">Published & future</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center">
-              <TicketIcon className="h-10 w-10 text-pink-400" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-300">Tickets Sold</p>
-                <p className="text-3xl font-bold text-white">{stats.totalTickets}</p>
-                <div className="flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
-                  <span className="text-xs text-green-400">+15% this week</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Recent Events */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Recent Events</h2>
-              <Link
-                href="/admin/events"
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-              >
-                View All →
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {recentEvents.length > 0 ? (
-                recentEvents.map((event) => (
-                  <div key={event.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
-                    <div>
-                      <h3 className="font-medium text-white">{event.title}</h3>
-                      <p className="text-sm text-gray-300">
-                        {new Date(event.date).toLocaleDateString()} • {event.venue}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
-                      event.status === 'PUBLISHED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
-                      event.status === 'DRAFT' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
-                      'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
-                    }`}>
-                      {event.status}
-                    </span>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-12">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <Users className="h-10 w-10 text-blue-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Total Users</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
+                  <div className="flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                    <span className="text-xs text-green-400">+12% this month</span>
                   </div>
-                ))
-              ) : (
-                <div className="text-center p-8">
-                  <p className="text-gray-300">No events created yet</p>
-                  <Link
-                    href="/admin/events/create"
-                    className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-                  >
-                    Create your first event →
-                  </Link>
                 </div>
-              )}
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <Calendar className="h-10 w-10 text-green-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Total Events</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalEvents}</p>
+                  <p className="text-xs text-gray-400">{stats.upcomingEvents} upcoming</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <TicketIcon className="h-10 w-10 text-purple-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Total Orders</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalOrders}</p>
+                  <p className="text-xs text-gray-400">{stats.totalTickets} tickets sold</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <DollarSign className="h-10 w-10 text-yellow-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Total Revenue</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}€</p>
+                  <div className="flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                    <span className="text-xs text-green-400">+8% this month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <Calendar className="h-10 w-10 text-indigo-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Upcoming Events</p>
+                  <p className="text-3xl font-bold text-white">{stats.upcomingEvents}</p>
+                  <p className="text-xs text-gray-400">Published & future</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center">
+                <TicketIcon className="h-10 w-10 text-pink-400" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-300">Tickets Sold</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalTickets}</p>
+                  <div className="flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
+                    <span className="text-xs text-green-400">+15% this week</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Recent Orders */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Recent Orders</h2>
-              <Link
-                href="/admin/orders"
-                className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-              >
-                View All →
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
-                  <div key={order.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
-                    <div>
-                      <h3 className="font-medium text-white">{order.event.title}</h3>
-                      <p className="text-sm text-gray-300">{order.user.name || order.user.email}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-white">{order.total.toFixed(2)}€</p>
-                      <span className={`px-3 py-1 text-xs rounded-full font-medium border ${
-                        order.status === 'CONFIRMED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
-                        order.status === 'PENDING' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
-                        'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
-                      }`}>
-                        {order.status}
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Recent Events */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Recent Events</h2>
+                <Link
+                  href="/admin/events"
+                  className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                >
+                  View All →
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {recentEvents.length > 0 ? (
+                  recentEvents.map((event) => (
+                    <div key={event.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
+                      <div>
+                        <h3 className="font-medium text-white">{event.title}</h3>
+                        <p className="text-sm text-gray-300">
+                          {new Date(event.date).toLocaleDateString()} • {event.venue}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 text-xs rounded-full font-medium border ${event.status === 'PUBLISHED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                          event.status === 'DRAFT' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                            'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                        }`}>
+                        {event.status}
                       </span>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center p-8">
+                    <p className="text-gray-300">No events created yet</p>
+                    <Link
+                      href="/admin/events/create"
+                      className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                    >
+                      Create your first event →
+                    </Link>
                   </div>
-                ))
-              ) : (
-                <div className="text-center p-8">
-                  <p className="text-gray-300">No orders yet</p>
-                  <p className="text-sm text-gray-400 mt-1">Orders will appear here when users book tickets</p>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+
+            {/* Recent Orders */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Recent Orders</h2>
+                <Link
+                  href="/admin/orders"
+                  className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                >
+                  View All →
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {recentOrders.length > 0 ? (
+                  recentOrders.map((order) => (
+                    <div key={order.id} className="flex justify-between items-center p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300">
+                      <div>
+                        <h3 className="font-medium text-white">{order.event.title}</h3>
+                        <p className="text-sm text-gray-300">{order.user.name || order.user.email}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-white">{order.total.toFixed(2)}€</p>
+                        <span className={`px-3 py-1 text-xs rounded-full font-medium border ${order.status === 'CONFIRMED' ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400' :
+                            order.status === 'PENDING' ? 'bg-yellow-400 bg-opacity-20 text-yellow-300 border-yellow-400' :
+                              'bg-red-400 bg-opacity-20 text-red-300 border-red-400'
+                          }`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center p-8">
+                    <p className="text-gray-300">No orders yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Orders will appear here when users book tickets</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-xl">
-          <h2 className="text-2xl font-bold text-white mb-8">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link
-              href="/admin/events/create"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <Plus className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Create Event</span>
-            </Link>
+          {/* Quick Actions */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-8">Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link
+                href="/admin/events/create"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <Plus className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Create Event</span>
+              </Link>
 
-            <Link
-              href="/admin/events"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-green-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-green-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Manage Events</span>
-            </Link>
+              <Link
+                href="/admin/events"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-green-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-green-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Manage Events</span>
+              </Link>
 
-            <Link
-              href="/admin/orders"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-purple-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <DollarSign className="h-6 w-6 mr-3 text-gray-400 group-hover:text-purple-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">View Orders</span>
-            </Link>
+              <Link
+                href="/admin/orders"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-purple-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <DollarSign className="h-6 w-6 mr-3 text-gray-400 group-hover:text-purple-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">View Orders</span>
+              </Link>
 
-            <Link
-              href="/admin/users"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-blue-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <Users className="h-6 w-6 mr-3 text-gray-400 group-hover:text-blue-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Manage Users</span>
-            </Link>
+              <Link
+                href="/admin/users"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-blue-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <Users className="h-6 w-6 mr-3 text-gray-400 group-hover:text-blue-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Manage Users</span>
+              </Link>
 
-            <Link
-              href="/admin/scan"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-yellow-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <TicketIcon className="h-6 w-6 mr-3 text-gray-400 group-hover:text-yellow-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Scan QR Codes</span>
-            </Link>
+              <Link
+                href="/admin/scan"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-yellow-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <TicketIcon className="h-6 w-6 mr-3 text-gray-400 group-hover:text-yellow-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Scan QR Codes</span>
+              </Link>
 
-            <Link
-              href="/admin/analytics"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-orange-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <BarChart3 className="h-6 w-6 mr-3 text-gray-400 group-hover:text-orange-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Analytics</span>
-            </Link>
+              <Link
+                href="/admin/analytics"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-orange-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <BarChart3 className="h-6 w-6 mr-3 text-gray-400 group-hover:text-orange-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Analytics</span>
+              </Link>
 
-            <Link
-              href="/admin/content/homepage"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-indigo-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <Settings className="h-6 w-6 mr-3 text-gray-400 group-hover:text-indigo-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Homepage Content</span>
-            </Link>
+              <Link
+                href="/admin/content/homepage"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-indigo-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <Settings className="h-6 w-6 mr-3 text-gray-400 group-hover:text-indigo-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Homepage Content</span>
+              </Link>
 
-            <Link
-              href="/admin/content/past-events"
-              className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
-            >
-              <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
-              <span className="text-gray-300 group-hover:text-white font-medium">Past Events</span>
-            </Link>
+              <Link
+                href="/admin/content/past-events"
+                className="flex items-center justify-center p-6 border-2 border-dashed border-white/30 rounded-xl hover:border-pink-400 hover:bg-white/10 transition-all duration-300 group transform hover:scale-105"
+              >
+                <Calendar className="h-6 w-6 mr-3 text-gray-400 group-hover:text-pink-400" />
+                <span className="text-gray-300 group-hover:text-white font-medium">Past Events</span>
+              </Link>
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

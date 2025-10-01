@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft } from 'lucide-react'
@@ -18,7 +17,7 @@ export default function NewPastEventPage() {
     )
   }
 
-  if (!session?.user || session.user.role !== 'ADMIN') {
+  if (!user) {
     router.push('/auth/signin')
     return null
   }

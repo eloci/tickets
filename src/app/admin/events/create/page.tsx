@@ -5,20 +5,19 @@ import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { 
-  Calendar, 
-  MapPin, 
-  DollarSign, 
-  Users, 
-  Save, 
-  ArrowLeft, 
-  Upload, 
-  Image as ImageIcon, 
+import {
+  Calendar,
+  MapPin,
+  DollarSign,
+  Users,
+  Save,
+  ArrowLeft,
+  Upload,
+  Image as ImageIcon,
   Clock,
   Globe,
   Tag,
   FileText,
-  Star,
   Settings,
   Eye,
   Plus,
@@ -37,7 +36,7 @@ interface TicketTier {
 export default function CreateEventPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
-  
+
   // ALL HOOKS MUST BE AT THE TOP - Rules of Hooks
   const [eventData, setEventData] = useState({
     title: '',
@@ -84,12 +83,12 @@ export default function CreateEventPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
-  
+
   // Debug component loading
   useEffect(() => {
     toast('Welcome to Event Creation')
   }, [])
-  
+
   // Authentication check
   useEffect(() => {
     if (isLoaded && (!user || user.publicMetadata?.role !== 'admin')) {
@@ -134,12 +133,12 @@ export default function CreateEventPage() {
       toast.error('Please enter a tag')
       return
     }
-    
+
     if (eventData.tags.includes(currentTag.trim())) {
       toast.error('Tag already exists')
       return
     }
-    
+
     setEventData(prev => ({
       ...prev,
       tags: [...prev.tags, currentTag.trim()]
@@ -221,7 +220,7 @@ export default function CreateEventPage() {
   const updateTicketTier = (id: string, field: string, value: any) => {
     setEventData(prev => ({
       ...prev,
-      ticketTiers: prev.ticketTiers.map(tier => 
+      ticketTiers: prev.ticketTiers.map(tier =>
         tier.id === id ? { ...tier, [field]: value } : tier
       )
     }))
@@ -232,7 +231,7 @@ export default function CreateEventPage() {
       toast.error('At least one ticket tier is required')
       return
     }
-    
+
     setEventData(prev => ({
       ...prev,
       ticketTiers: prev.ticketTiers.filter(tier => tier.id !== id)
@@ -243,42 +242,42 @@ export default function CreateEventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('🔥 FORM SUBMIT TRIGGERED!', e.type)
     e.preventDefault()
-    
+
     console.log('Form submitted - starting validation...')
     toast('Processing form submission...')
-    
+
     // Validation
     if (!eventData.title.trim()) {
       console.log('❌ Validation failed: title missing')
       toast.error('Event title is required')
       return
     }
-    
+
     if (!eventData.description.trim()) {
       toast.error('Event description is required')
       return
     }
-    
+
     if (!eventData.date) {
       toast.error('Event date is required')
       return
     }
-    
+
     if (!eventData.venue.trim()) {
       toast.error('Venue is required')
       return
     }
-    
+
     if (!eventData.location.trim()) {
       toast.error('Location is required')
       return
     }
-    
+
     if (eventData.ticketTiers.length === 0) {
       toast.error('At least one ticket tier is required')
       return
     }
-    
+
     // Validate ticket tiers
     for (const tier of eventData.ticketTiers) {
       if (!tier.name.trim()) {
@@ -294,25 +293,25 @@ export default function CreateEventPage() {
         return
       }
     }
-    
+
     if (!eventData.organizer.name.trim()) {
       toast.error('Organizer name is required')
       return
     }
-    
+
     if (!eventData.organizer.email.trim()) {
       toast.error('Organizer email is required')
       return
     }
-    
+
     setLoading(true)
-    
+
     // Show loading toast
     const loadingToast = toast.loading('Creating event...')
-    
+
     try {
       console.log('Submitting event data:', eventData)
-      
+
       // Prepare data for API
       const eventPayload = {
         ...eventData,
@@ -326,9 +325,9 @@ export default function CreateEventPage() {
           capacity: parseInt(tier.capacity.toString())
         }))
       }
-      
+
       console.log('Prepared payload:', eventPayload)
-      
+
       const response = await fetch('/api/admin/events', {
         method: 'POST',
         headers: {
@@ -336,38 +335,47 @@ export default function CreateEventPage() {
         },
         body: JSON.stringify(eventPayload),
       })
-      
+
       console.log('Response status:', response.status)
-      
+
+      // Check if the response is JSON before trying to parse it
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        // Not JSON, get text content for better error handling
+        const textContent = await response.text()
+        console.error('Non-JSON response:', textContent)
+        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
+      }
+
       const result = await response.json()
       console.log('Response data:', result)
-      
+
       if (!response.ok) {
         throw new Error(result.error || `Server error: ${response.status}`)
       }
-      
+
       // Success
       toast.success('Event created successfully!', {
         id: loadingToast,
       })
-      
+
       console.log('Event created successfully:', result)
-      
+
       // Redirect to events list after short delay
       setTimeout(() => {
         router.push('/admin/events')
       }, 1500)
-      
+
     } catch (error) {
       console.error('Detailed error creating event:', error)
-      
+
       let errorMessage = 'Failed to create event'
       if (error instanceof Error) {
         errorMessage = error.message
       } else if (typeof error === 'string') {
         errorMessage = error
       }
-      
+
       toast.error(errorMessage, {
         id: loadingToast,
         duration: 5000,
@@ -399,9 +407,9 @@ export default function CreateEventPage() {
                   </span>
                 </h1>
                 <p className="text-xl text-gray-200">Design an amazing experience for your audience</p>
-                
+
                 {/* Test Button for Debugging */}
-                <button 
+                <button
                   onClick={() => {
                     console.log('🧪 TEST BUTTON CLICKED!')
                     toast('Test button works!')
@@ -413,7 +421,7 @@ export default function CreateEventPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button 
+              <button
                 type="button"
                 className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/15 transition-all duration-200 transform hover:scale-105 flex items-center shadow-lg"
               >
@@ -442,11 +450,10 @@ export default function CreateEventPage() {
                     key={id}
                     type="button"
                     onClick={() => setActiveTab(id)}
-                    className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                      activeTab === id
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg transform scale-105'
-                        : 'text-gray-300 hover:text-white hover:bg-white/10'
-                    }`}
+                    className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${activeTab === id
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg transform scale-105'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                      }`}
                   >
                     <Icon className="h-4 w-4 mr-2" />
                     {label}
@@ -480,7 +487,7 @@ export default function CreateEventPage() {
                           placeholder="Enter an amazing event title"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-3">
                           Event Category *
@@ -551,8 +558,8 @@ export default function CreateEventPage() {
                           <span
                             key={index}
                             className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center shadow-lg transform hover:scale-105 transition-all duration-200"
-                            style={{ 
-                              boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)' 
+                            style={{
+                              boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)'
                             }}
                           >
                             <Tag className="h-3 w-3 mr-1" />
@@ -596,9 +603,9 @@ export default function CreateEventPage() {
                       <div className="border-2 border-dashed border-white/30 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
                         {imagePreview ? (
                           <div className="relative">
-                            <img 
-                              src={imagePreview} 
-                              alt="Event preview" 
+                            <img
+                              src={imagePreview}
+                              alt="Event preview"
                               className="max-h-48 mx-auto rounded-lg mb-4"
                             />
                             <button
@@ -677,7 +684,7 @@ export default function CreateEventPage() {
                           className="w-full px-4 py-3 bg-gray-900/90 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-gray-800/90 transition-all duration-200 backdrop-blur-sm shadow-lg"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-3">
                           <Clock className="h-4 w-4 inline mr-2 text-green-400" />
@@ -722,7 +729,7 @@ export default function CreateEventPage() {
                           placeholder="Amazing Venue Name"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-3">
                           City & State *

@@ -74,7 +74,7 @@ export default function DashboardStats() {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Dashboard</h3>
           <p className="text-gray-600">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
@@ -190,11 +190,10 @@ export default function DashboardStats() {
                     {new Date(event.date).toLocaleDateString()} • {event.venue}
                   </p>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                  event.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                  event.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-2 py-1 text-xs rounded-full font-medium ${event.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
+                    event.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                  }`}>
                   {event.status}
                 </span>
               </div>
@@ -228,11 +227,10 @@ export default function DashboardStats() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-gray-900">{order.total.toFixed(2)}€</p>
-                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                    order.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${order.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                    }`}>
                     {order.status}
                   </span>
                 </div>

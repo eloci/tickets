@@ -5,7 +5,7 @@ import { Users, UserCheck, UserX, Shield, Mail, Calendar } from 'lucide-react'
 
 export default async function AdminUsersPage() {
   const { userId } = await auth()
-  
+
   if (!userId) {
     redirect('/sign-in')
   }
@@ -24,7 +24,7 @@ export default async function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-purple-500" />
@@ -55,7 +55,7 @@ export default async function AdminUsersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <UserCheck className="h-8 w-8 text-green-500" />
@@ -67,7 +67,7 @@ export default async function AdminUsersPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-orange-500" />
@@ -77,8 +77,8 @@ export default async function AdminUsersPage() {
                   {users.filter(u => {
                     const createdDate = new Date(u.createdAt)
                     const now = new Date()
-                    return createdDate.getMonth() === now.getMonth() && 
-                           createdDate.getFullYear() === now.getFullYear()
+                    return createdDate.getMonth() === now.getMonth() &&
+                      createdDate.getFullYear() === now.getFullYear()
                   }).length}
                 </p>
               </div>
@@ -91,7 +91,7 @@ export default async function AdminUsersPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -155,20 +155,18 @@ export default async function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.publicMetadata?.role === 'admin'
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.publicMetadata?.role === 'admin'
                           ? 'bg-purple-100 text-purple-800'
                           : 'bg-gray-100 text-gray-800'
-                      }`}>
+                        }`}>
                         {user.publicMetadata?.role || 'user'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.banned
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.banned
                           ? 'bg-red-100 text-red-800'
                           : 'bg-green-100 text-green-800'
-                      }`}>
+                        }`}>
                         {user.banned ? 'Banned' : 'Active'}
                       </span>
                     </td>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EventsStorage } from '@/lib/storage/events'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get all events, but only return published ones for public access
     const allEvents = EventsStorage.getAll()

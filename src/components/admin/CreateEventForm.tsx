@@ -296,8 +296,8 @@ export default function CreateEventForm() {
                       type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                       value={formData.socialLinks.website}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
+                      onChange={(e) => setFormData({
+                        ...formData,
                         socialLinks: { ...formData.socialLinks, website: e.target.value }
                       })}
                       placeholder="https://yourwebsite.com"
@@ -312,8 +312,8 @@ export default function CreateEventForm() {
                       type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                       value={formData.socialLinks.facebook}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
+                      onChange={(e) => setFormData({
+                        ...formData,
                         socialLinks: { ...formData.socialLinks, facebook: e.target.value }
                       })}
                       placeholder="https://facebook.com/yourpage"
@@ -328,8 +328,8 @@ export default function CreateEventForm() {
                       type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                       value={formData.socialLinks.twitter}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
+                      onChange={(e) => setFormData({
+                        ...formData,
                         socialLinks: { ...formData.socialLinks, twitter: e.target.value }
                       })}
                       placeholder="https://twitter.com/yourhandle"
@@ -344,8 +344,8 @@ export default function CreateEventForm() {
                       type="url"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                       value={formData.socialLinks.instagram}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
+                      onChange={(e) => setFormData({
+                        ...formData,
                         socialLinks: { ...formData.socialLinks, instagram: e.target.value }
                       })}
                       placeholder="https://instagram.com/yourhandle"

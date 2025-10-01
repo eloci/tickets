@@ -1,9 +1,9 @@
 import { requireAdmin } from '@/lib/clerk-auth'
 import Link from 'next/link'
-import { ArrowLeft, BarChart3, TrendingUp } from 'lucide-react'
+import { ArrowLeft, BarChart3 } from 'lucide-react'
 
 export default async function AdminAnalyticsPage() {
-  const user = await requireAdmin()
+  await requireAdmin()
 
   return (
     <div className="min-h-screen bg-gray-50">

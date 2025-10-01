@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
@@ -338,9 +338,9 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                   )}
                   {formData.image && (
                     <div className="mt-2">
-                      <img 
-                        src={formData.image} 
-                        alt="Event preview" 
+                      <img
+                        src={formData.image}
+                        alt="Event preview"
                         className="w-32 h-20 object-cover rounded border"
                       />
                       <div className="text-xs text-gray-500 mt-1">{formData.image}</div>
@@ -369,9 +369,9 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                   )}
                   {formData.posterUrl && (
                     <div className="mt-2">
-                      <img 
-                        src={formData.posterUrl} 
-                        alt="Poster preview" 
+                      <img
+                        src={formData.posterUrl}
+                        alt="Poster preview"
                         className="w-32 h-20 object-cover rounded border"
                       />
                       <div className="text-xs text-gray-500 mt-1">{formData.posterUrl}</div>

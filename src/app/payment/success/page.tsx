@@ -14,12 +14,43 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     if (sessionId) {
-      // In a real implementation, you'd fetch session details from your API
-      // For now, we'll show a success message
+      // Send ticket email automatically when payment is successful
+      const sendTicketEmail = async () => {
+        try {
+          console.log('Sending ticket email for session:', sessionId)
+
+          const response = await fetch('/api/send-ticket-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              sessionId,
+              customerEmail: 'ensar.loci@gmail.com', // Use your actual email
+              customerName: 'Ensar Loci'
+            })
+          })
+
+          const result = await response.json()
+
+          if (result.success) {
+            console.log('✅ Ticket email sent successfully!')
+          } else {
+            console.error('❌ Failed to send ticket email:', result.error)
+          }
+        } catch (error) {
+          console.error('❌ Error sending ticket email:', error)
+        }
+      }
+
+      // Send the email
+      sendTicketEmail()
+
+      // Set the session data for display
       setSessionData({
         id: sessionId,
         eventTitle: 'Your Event',
-        customerEmail: 'customer@example.com',
+        customerEmail: 'ensar.loci@gmail.com',
         totalAmount: 89
       })
       setLoading(false)
@@ -40,7 +71,7 @@ function PaymentSuccessContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
-      
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 text-center">
           {/* Success Icon */}

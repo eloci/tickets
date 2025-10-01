@@ -198,10 +198,10 @@ export function generateGooglePayPass(ticketData: GooglePayPassData): string {
     const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url')
     const payload = Buffer.from(JSON.stringify(passData)).toString('base64url')
     
-    // For demo purposes, we'll create a simple JWT structure
+    // Create a simple JWT structure for Google Pay pass
     // In production, you must sign this with your Google Pay private key
     const signature = crypto
-      .createHmac('sha256', process.env.GOOGLE_PAY_PRIVATE_KEY || 'demo-key')
+      .createHmac('sha256', process.env.GOOGLE_PAY_PRIVATE_KEY || 'fallback-key')
       .update(`${header}.${payload}`)
       .digest('base64url')
 

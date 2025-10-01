@@ -94,7 +94,7 @@ export default function CheckoutPage({ orderId }: CheckoutProps) {
         // Handle Stripe not configured (development mode)
         if (response.status === 503 && error.development) {
           toast.error('💳 Payment system not configured. This is a development environment.')
-          console.log('✅ Development mode: Simulating successful payment')
+          // Development mode: Simulating successful payment
           // Simulate successful payment in development
           toast.success('✅ Development mode: Payment simulated successfully!')
           router.push(`/orders/${order.id}/confirmation`)

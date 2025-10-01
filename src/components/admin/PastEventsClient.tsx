@@ -144,10 +144,10 @@ export default function PastEventsClientPage() {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${event.featured
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : event.isPublished
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : event.isPublished
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                       }`}>
                       {event.featured ? 'Featured' : event.isPublished ? 'Published' : 'Draft'}
                     </span>

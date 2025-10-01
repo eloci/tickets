@@ -4,32 +4,27 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Users, 
-  ArrowLeft, 
+import {
+  MapPin,
+  Clock,
+  Users,
+  ArrowLeft,
   Ticket,
   Share2,
   Heart,
   Star,
+  User,
+  FileText,
+  Tag,
+  Play,
   Plus,
   Minus,
-  Music,
   Calendar as CalendarIcon,
   Timer,
-  TrendingUp,
   Globe,
   Facebook,
   Twitter,
-  Instagram,
-  User,
-  Mail,
-  Phone,
-  FileText,
-  Play,
-  Tag
+  Instagram
 } from 'lucide-react'
 import Header from '@/components/Header'
 import { redirectToCheckout } from '@/lib/checkout'
@@ -79,7 +74,7 @@ export default function EventDetailsPage() {
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedQuantities, setSelectedQuantities] = useState<{[tierId: string]: number}>({})
+  const [selectedQuantities, setSelectedQuantities] = useState<{ [tierId: string]: number }>({})
   const [totalPrice, setTotalPrice] = useState(0)
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -100,7 +95,7 @@ export default function EventDetailsPage() {
         const [hours, minutes] = event.time.split(':')
         eventDate.setHours(parseInt(hours), parseInt(minutes))
       }
-      
+
       const now = new Date()
       const difference = eventDate.getTime() - now.getTime()
 
@@ -138,12 +133,12 @@ export default function EventDetailsPage() {
     const maxAllowed = event?.maxTicketsPerPurchase || 10
     const totalSelected = Object.values(selectedQuantities).reduce((sum, qty) => sum + qty, 0)
     const currentQuantity = selectedQuantities[tierId] || 0
-    
+
     // Check if the new total would exceed the limit
     if (totalSelected - currentQuantity + newQuantity > maxAllowed) {
       return // Don't update if it would exceed the limit
     }
-    
+
     setSelectedQuantities(prev => ({
       ...prev,
       [tierId]: Math.max(0, newQuantity)
@@ -211,14 +206,13 @@ export default function EventDetailsPage() {
         setTimeout(() => setShowShareToast(false), 3000)
       }
     } catch (error) {
-      console.log('Error sharing:', error)
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href)
         setShowShareToast(true)
         setTimeout(() => setShowShareToast(false), 3000)
       } catch (clipboardError) {
-        console.log('Clipboard error:', clipboardError)
+        // Silent error handling
       }
     }
   }
@@ -237,7 +231,7 @@ export default function EventDetailsPage() {
 
       // Prepare ticket data for checkout
       const tickets = []
-      
+
       if (event.ticketTiers && event.ticketTiers.length > 0) {
         // Multiple tiers
         for (const tier of event.ticketTiers) {
@@ -305,7 +299,7 @@ export default function EventDetailsPage() {
         if (response.ok) {
           const events = await response.json()
           const foundEvent = events.find((e: Event) => e.id === params.id)
-          
+
           if (foundEvent) {
             setEvent(foundEvent)
           } else {
@@ -366,21 +360,21 @@ export default function EventDetailsPage() {
           </div>
         </div>
       )}
-      
+
       <Header />
 
       {/* Enhanced Special Hero Section */}
       <div className="relative overflow-hidden min-h-[80vh] flex items-end">
         {/* Sophisticated Background Layers */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 -z-10"></div>
-        
+
         {/* Elegant Floating Geometric Shapes */}
         <div className="absolute inset-0 -z-15">
           <div className="absolute top-20 left-10 w-16 h-16 bg-gradient-to-r from-blue-400/20 to-indigo-500/20 rounded-full blur-sm animate-pulse"></div>
           <div className="absolute top-40 right-20 w-12 h-12 bg-gradient-to-r from-purple-400/15 to-blue-500/15 rounded-full blur-sm animate-bounce"></div>
           <div className="absolute bottom-40 left-1/4 w-8 h-8 bg-gradient-to-r from-indigo-400/15 to-purple-500/15 rounded-full blur-sm animate-ping"></div>
           <div className="absolute top-1/3 right-1/3 w-6 h-6 bg-gradient-to-r from-slate-400/15 to-blue-500/15 rounded-full blur-sm animate-pulse delay-300"></div>
-          
+
           {/* Refined Animated Particles */}
           <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-blue-300/15 rounded-full animate-float delay-700"></div>
           <div className="absolute top-3/4 right-1/3 w-2 h-2 bg-indigo-300/15 rounded-full animate-float delay-1200"></div>
@@ -392,7 +386,7 @@ export default function EventDetailsPage() {
 
         {event.image ? (
           <>
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center scale-110 -z-20 transition-transform duration-2000 hover:scale-105"
               style={{ backgroundImage: `url(${event.image})` }}
             />
@@ -405,7 +399,7 @@ export default function EventDetailsPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
           </div>
         )}
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full">
           {/* Enhanced Navigation with Glow Effects */}
           <div className="flex items-center justify-between mb-16 pt-8">
@@ -418,19 +412,18 @@ export default function EventDetailsPage() {
               </div>
               <span className="ml-3 font-medium">Back to Events</span>
             </Link>
-            
+
             <div className="flex items-center space-x-4">
-              <button 
+              <button
                 onClick={handleLike}
-                className={`p-4 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl ${
-                  isLiked 
-                    ? 'bg-red-500/80 hover:bg-red-500/90 text-white shadow-red-500/25' 
-                    : 'bg-white/10 hover:bg-red-500/30 text-white hover:shadow-red-500/25'
-                }`}
+                className={`p-4 rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl ${isLiked
+                  ? 'bg-red-500/80 hover:bg-red-500/90 text-white shadow-red-500/25'
+                  : 'bg-white/10 hover:bg-red-500/30 text-white hover:shadow-red-500/25'
+                  }`}
               >
                 <Heart className={`h-5 w-5 transition-all duration-300 ${isLiked ? 'fill-current scale-110' : ''}`} />
               </button>
-              <button 
+              <button
                 onClick={handleShare}
                 className="p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-blue-500/30 text-white transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl hover:shadow-blue-500/25"
               >
@@ -438,7 +431,7 @@ export default function EventDetailsPage() {
               </button>
             </div>
           </div>
-          
+
           <div className="max-w-5xl">
             {/* Elegant Special Badge */}
             <div className="mb-8 animate-fade-in-up">
@@ -460,10 +453,10 @@ export default function EventDetailsPage() {
                   <div>
                     <p className="text-white/70 text-sm font-medium">Event Date</p>
                     <p className="text-white font-bold text-lg">
-                      {new Date(event.date).toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
+                      {new Date(event.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
                       })}
                     </p>
                   </div>
@@ -501,7 +494,7 @@ export default function EventDetailsPage() {
 
             {/* Enhanced Stats Row - Countdown Timer, Organizer & Tickets Progress */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-600">
-              
+
               {/* Countdown Timer Card */}
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 shadow-xl">
                 <div className="text-center">
@@ -539,13 +532,13 @@ export default function EventDetailsPage() {
                     </div>
                     <h3 className="text-lg font-bold text-white">Organizer</h3>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     {/* Organizer Avatar */}
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg">
                       <User className="h-5 w-5 text-white" />
                     </div>
-                    
+
                     {/* Organizer Info */}
                     <div className="flex-1 min-w-0">
                       <h4 className="text-white font-bold text-sm truncate">{event.organizer.name}</h4>
@@ -563,20 +556,20 @@ export default function EventDetailsPage() {
                   </div>
                   <h3 className="text-lg font-bold text-white">Tickets Sold</h3>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-white/80 text-sm">Progress</span>
                     <span className="text-white font-bold text-lg">{Math.round((event.soldTickets || 0) / (event.capacity || 1) * 100)}%</span>
                   </div>
-                  
+
                   <div className="w-full bg-gray-700/50 rounded-full h-2.5 backdrop-blur-sm border border-gray-600/30">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-blue-500 via-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-700 ease-out shadow-lg shadow-blue-500/20"
                       style={{ width: `${Math.round((event.soldTickets || 0) / (event.capacity || 1) * 100)}%` }}
                     ></div>
                   </div>
-                  
+
                   <div className="flex justify-between text-xs text-gray-300">
                     <span>{event.soldTickets || 0} sold</span>
                     <span>{event.capacity || 0} total</span>
@@ -588,7 +581,7 @@ export default function EventDetailsPage() {
             {/* Call to Action Buttons */}
             {/* Enhanced Call to Action Buttons */}
             <div className="flex flex-wrap gap-4 animate-fade-in-up delay-800">
-              <button 
+              <button
                 onClick={() => {
                   // Scroll to ticket section
                   const ticketSection = document.getElementById('ticket-section')
@@ -604,7 +597,7 @@ export default function EventDetailsPage() {
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
-              <button 
+              <button
                 onClick={() => {
                   // Add to calendar functionality
                   const eventDate = new Date(event?.date || '')
@@ -628,158 +621,158 @@ export default function EventDetailsPage() {
       <div className="relative -mt-20 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl space-y-4">
-            
+
             {/* Event Description - Sophisticated Style */}
             <div className="bg-gradient-to-br from-slate-500/20 to-blue-600/20 backdrop-blur-md border border-slate-300/30 rounded-2xl p-8 hover:border-blue-300/50 transition-all duration-300 shadow-2xl">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white">About This Event</h2>
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg">
+                  <FileText className="h-5 w-5 text-white" />
                 </div>
-
-                {/* Event Image with Sticked Tags */}
-                {event.image && (
-                  <div className="mb-6">
-                    <div className="relative rounded-xl overflow-hidden shadow-2xl">
-                      <img 
-                        src={event.image} 
-                        alt={event.title}
-                        className="w-full h-64 md:h-80 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-                      
-                      {/* Tags Sticked to Photo */}
-                      {event.tags && event.tags.length > 0 && (
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <div className="flex flex-wrap gap-2">
-                            {event.tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center shadow-lg backdrop-blur-sm border border-white/20"
-                                style={{ 
-                                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.3)' 
-                                }}
-                              >
-                                <Tag className="h-3 w-3 mr-1" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Event Image Fallback (when no image) - Show tags separately */}
-                {!event.image && event.tags && event.tags.length > 0 && (
-                  <div className="mb-6">
-                    <div className="flex flex-wrap gap-3">
-                      {event.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center shadow-lg transform hover:scale-105 transition-all duration-200"
-                          style={{ 
-                            boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)' 
-                          }}
-                        >
-                          <Tag className="h-3 w-3 mr-1" />
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-gray-200 leading-relaxed text-lg">
-                  {event.description.split(/\n/).map((paragraph, index) => (
-                    <p key={index} className="mb-4 last:mb-0">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+                <h2 className="text-2xl font-bold text-white">About This Event</h2>
               </div>
 
-              {/* YouTube Video - Elegant Style */}
-              {event.youtubeUrl && (
-                <div className="bg-gradient-to-br from-indigo-500/20 to-purple-600/20 backdrop-blur-md border border-indigo-300/30 rounded-2xl p-8 hover:border-purple-300/50 transition-all duration-300 shadow-2xl">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg">
-                      <Play className="h-5 w-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white">Event Preview</h2>
-                  </div>
-                  <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl">
-                    <iframe
-                      src={event.youtubeUrl.includes('watch?v=') ? event.youtubeUrl.replace('watch?v=', 'embed/') : event.youtubeUrl}
-                      title="Event Video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute inset-0 w-full h-full"
+              {/* Event Image with Sticked Tags */}
+              {event.image && (
+                <div className="mb-6">
+                  <div className="relative rounded-xl overflow-hidden shadow-2xl">
+                    <img
+                      src={event.image}
+                      alt={event.title}
+                      className="w-full h-64 md:h-80 object-cover"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+
+                    {/* Tags Sticked to Photo */}
+                    {event.tags && event.tags.length > 0 && (
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <div className="flex flex-wrap gap-2">
+                          {event.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center shadow-lg backdrop-blur-sm border border-white/20"
+                              style={{
+                                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.3)'
+                              }}
+                            >
+                              <Tag className="h-3 w-3 mr-1" />
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Social Media Links - Sophisticated Design */}
-              {(event.socialLinks?.website || event.socialLinks?.facebook || event.socialLinks?.twitter || event.socialLinks?.instagram) && (
-                <div className="bg-gradient-to-br from-blue-500/20 to-slate-600/20 backdrop-blur-md border border-blue-300/30 rounded-2xl p-8 hover:border-slate-300/50 transition-all duration-300 shadow-2xl">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-slate-600 shadow-lg">
-                      <Share2 className="h-5 w-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white">Connect With Us</h2>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {event.socialLinks?.website && (
-                      <a
-                        href={event.socialLinks.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 bg-gray-500/30 hover:bg-gray-500/50 text-gray-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-gray-400/30 hover:border-gray-400/60"
+              {/* Event Image Fallback (when no image) - Show tags separately */}
+              {!event.image && event.tags && event.tags.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-3">
+                    {event.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center shadow-lg transform hover:scale-105 transition-all duration-200"
+                        style={{
+                          boxShadow: '0 4px 15px rgba(236, 72, 153, 0.3)'
+                        }}
                       >
-                        <Globe className="h-5 w-5" />
-                        <span className="font-medium">Website</span>
-                      </a>
-                    )}
-                    {event.socialLinks?.facebook && (
-                      <a
-                        href={event.socialLinks.facebook}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-blue-400/30 hover:border-blue-400/60"
-                      >
-                        <Facebook className="h-5 w-5" />
-                        <span className="font-medium">Facebook</span>
-                      </a>
-                    )}
-                    {event.socialLinks?.twitter && (
-                      <a
-                        href={event.socialLinks.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-sky-400/30 hover:border-sky-400/60"
-                      >
-                        <Twitter className="h-5 w-5" />
-                        <span className="font-medium">Twitter</span>
-                      </a>
-                    )}
-                    {event.socialLinks?.instagram && (
-                      <a
-                        href={event.socialLinks.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center space-x-2 bg-pink-600/30 hover:bg-pink-600/50 text-pink-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-pink-400/30 hover:border-pink-400/60"
-                      >
-                        <Instagram className="h-5 w-5" />
-                        <span className="font-medium">Instagram</span>
-                      </a>
-                    )}
+                        <Tag className="h-3 w-3 mr-1" />
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
-            
+
+              <div className="text-gray-200 leading-relaxed text-lg">
+                {event.description.split(/\n/).map((paragraph, index) => (
+                  <p key={index} className="mb-4 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            {/* YouTube Video - Elegant Style */}
+            {event.youtubeUrl && (
+              <div className="bg-gradient-to-br from-indigo-500/20 to-purple-600/20 backdrop-blur-md border border-indigo-300/30 rounded-2xl p-8 hover:border-purple-300/50 transition-all duration-300 shadow-2xl">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg">
+                    <Play className="h-5 w-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">Event Preview</h2>
+                </div>
+                <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl">
+                  <iframe
+                    src={event.youtubeUrl.includes('watch?v=') ? event.youtubeUrl.replace('watch?v=', 'embed/') : event.youtubeUrl}
+                    title="Event Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Social Media Links - Sophisticated Design */}
+            {(event.socialLinks?.website || event.socialLinks?.facebook || event.socialLinks?.twitter || event.socialLinks?.instagram) && (
+              <div className="bg-gradient-to-br from-blue-500/20 to-slate-600/20 backdrop-blur-md border border-blue-300/30 rounded-2xl p-8 hover:border-slate-300/50 transition-all duration-300 shadow-2xl">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-slate-600 shadow-lg">
+                    <Share2 className="h-5 w-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">Connect With Us</h2>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {event.socialLinks?.website && (
+                    <a
+                      href={event.socialLinks.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center space-x-2 bg-gray-500/30 hover:bg-gray-500/50 text-gray-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-gray-400/30 hover:border-gray-400/60"
+                    >
+                      <Globe className="h-5 w-5" />
+                      <span className="font-medium">Website</span>
+                    </a>
+                  )}
+                  {event.socialLinks?.facebook && (
+                    <a
+                      href={event.socialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center space-x-2 bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-blue-400/30 hover:border-blue-400/60"
+                    >
+                      <Facebook className="h-5 w-5" />
+                      <span className="font-medium">Facebook</span>
+                    </a>
+                  )}
+                  {event.socialLinks?.twitter && (
+                    <a
+                      href={event.socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center space-x-2 bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-sky-400/30 hover:border-sky-400/60"
+                    >
+                      <Twitter className="h-5 w-5" />
+                      <span className="font-medium">Twitter</span>
+                    </a>
+                  )}
+                  {event.socialLinks?.instagram && (
+                    <a
+                      href={event.socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center space-x-2 bg-pink-600/30 hover:bg-pink-600/50 text-pink-200 hover:text-white px-4 py-3 rounded-xl transition-all duration-200 border border-pink-400/30 hover:border-pink-400/60"
+                    >
+                      <Instagram className="h-5 w-5" />
+                      <span className="font-medium">Instagram</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Ticket Purchase Section - Moved Under Event Preview */}
             <div id="ticket-section" className="relative space-y-4">
               {/* Ticket Purchase Card - Enhanced */}
@@ -790,7 +783,7 @@ export default function EventDetailsPage() {
                     <Ticket className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                
+
                 {/* Max tickets info */}
                 {event.maxTicketsPerPurchase && (
                   <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 mb-6">
@@ -799,7 +792,7 @@ export default function EventDetailsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 {event.status === 'PUBLISHED' ? (
                   <div className="space-y-4">
                     {event.ticketTiers && event.ticketTiers.length > 0 ? (
@@ -813,7 +806,7 @@ export default function EventDetailsPage() {
                             tierAvailable,
                             (event.maxTicketsPerPurchase || 10) - getTotalSelectedTickets() + currentQuantity
                           )
-                          
+
                           return (
                             <div key={tier.id} className="bg-white/5 rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-200">
                               {/* Tier Header */}
@@ -827,7 +820,7 @@ export default function EventDetailsPage() {
                                   <p className="text-gray-400 text-xs">per ticket</p>
                                 </div>
                               </div>
-                              
+
                               {/* Availability Indicator */}
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center space-x-2">
@@ -842,7 +835,7 @@ export default function EventDetailsPage() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               {/* Quantity Selector */}
                               {isAvailable ? (
                                 <div className="space-y-4">
@@ -856,11 +849,11 @@ export default function EventDetailsPage() {
                                       >
                                         <Minus className="h-4 w-4 text-white" />
                                       </button>
-                                      
+
                                       <span className="text-white font-bold text-lg min-w-[3rem] text-center">
                                         {currentQuantity}
                                       </span>
-                                      
+
                                       <button
                                         onClick={() => updateQuantity(tier.id, currentQuantity + 1)}
                                         disabled={currentQuantity >= maxForThisTier}
@@ -870,7 +863,7 @@ export default function EventDetailsPage() {
                                       </button>
                                     </div>
                                   </div>
-                                  
+
                                   {/* Subtotal for this tier */}
                                   {currentQuantity > 0 && (
                                     <div className="bg-white/10 rounded-lg p-3">
@@ -893,7 +886,7 @@ export default function EventDetailsPage() {
                             </div>
                           )
                         })}
-                        
+
                         {/* Total and Checkout */}
                         {getTotalSelectedTickets() > 0 && (
                           <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-6 mt-6">
@@ -902,13 +895,13 @@ export default function EventDetailsPage() {
                                 <span className="text-white font-medium">Total Tickets</span>
                                 <span className="text-white font-bold">{getTotalSelectedTickets()}</span>
                               </div>
-                              
+
                               <div className="flex justify-between items-center text-xl">
                                 <span className="text-white font-bold">Total Price</span>
                                 <span className="text-white font-bold">{totalPrice}€</span>
                               </div>
-                              
-                              <button 
+
+                              <button
                                 onClick={handleCheckout}
                                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mb-8"
                               >
@@ -925,7 +918,7 @@ export default function EventDetailsPage() {
                           <h3 className="text-xl font-semibold text-white">General Admission</h3>
                           <span className="text-3xl font-bold text-white">{event.price || 50}€</span>
                         </div>
-                        
+
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <span className="text-white font-medium">Quantity</span>
@@ -937,11 +930,11 @@ export default function EventDetailsPage() {
                               >
                                 <Minus className="h-4 w-4 text-white" />
                               </button>
-                              
+
                               <span className="text-white font-bold text-lg min-w-[3rem] text-center">
                                 {selectedQuantities['general'] || 0}
                               </span>
-                              
+
                               <button
                                 onClick={() => updateQuantity('general', (selectedQuantities['general'] || 0) + 1)}
                                 disabled={(selectedQuantities['general'] || 0) >= (event.maxTicketsPerPurchase || 10)}
@@ -951,7 +944,7 @@ export default function EventDetailsPage() {
                               </button>
                             </div>
                           </div>
-                          
+
                           {(selectedQuantities['general'] || 0) > 0 && (
                             <>
                               <div className="bg-white/10 rounded-lg p-3">
@@ -964,8 +957,8 @@ export default function EventDetailsPage() {
                                   </span>
                                 </div>
                               </div>
-                              
-                              <button 
+
+                              <button
                                 onClick={handleCheckout}
                                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mb-8"
                               >
@@ -995,7 +988,7 @@ export default function EventDetailsPage() {
 
       {/* Footer spacer */}
       <div className="h-8"></div>
-      
+
       {/* Toast Notifications */}
       <Toaster
         position="top-right"
