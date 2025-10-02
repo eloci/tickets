@@ -1,9 +1,17 @@
 import Stripe from 'stripe'
 
-// Initialize Stripe with your secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
-})
+const secret = process.env.STRIPE_SECRET_KEY
+if (!secret) {
+  throw new Error('Missing STRIPE_SECRET_KEY. Set it in .env.local')
+}
+
+// Check for placeholder/fake keys
+if (secret.includes('1234') || secret.includes('your_') || secret.length < 50) {
+  throw new Error('STRIPE_SECRET_KEY appears to be a placeholder. Use your real sk_test_... key from Stripe dashboard')
+}
+
+// Initialize Stripe with your secret key (use account's default API version)
+const stripe = new Stripe(secret)
 
 export interface CreateCheckoutSessionData {
   eventId: string
@@ -121,7 +129,7 @@ export async function getCheckoutSession(sessionId: string): Promise<Stripe.Chec
  */
 export function verifyWebhookSignature(payload: string, signature: string): Stripe.Event {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-  
+
   try {
     return stripe.webhooks.constructEvent(payload, signature, webhookSecret)
   } catch (error) {
@@ -157,10 +165,19 @@ export interface PaymentCompletedData {
 
 export async function processPaymentCompleted(session: Stripe.Checkout.Session): Promise<PaymentCompletedData> {
   const tickets = JSON.parse(session.metadata?.ticketData || '[]')
-  
+
+  // Normalize payment_intent to string ID
+  let paymentIntentId: string | undefined
+  const rawPi = session.payment_intent as any
+  if (typeof rawPi === 'string') {
+    paymentIntentId = rawPi
+  } else if (rawPi && typeof rawPi === 'object' && typeof rawPi.id === 'string') {
+    paymentIntentId = rawPi.id
+  }
+
   return {
     sessionId: session.id,
-    paymentIntentId: session.payment_intent as string,
+    paymentIntentId: paymentIntentId!,
     customerEmail: session.customer_email!,
     customerName: session.customer_details?.name || 'Unknown',
     customerPhone: session.customer_details?.phone || undefined,

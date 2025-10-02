@@ -79,7 +79,7 @@ export default function EventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events')
+        const response = await fetch('/api/events', { cache: 'no-store' })
         if (response.ok) {
           const data = await response.json()
           // Show only the first 3 events on homepage

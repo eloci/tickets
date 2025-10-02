@@ -19,11 +19,15 @@ import {
 
 interface Event {
   id: string
+  _id?: string
   title: string
   description: string
   date: string
+  time?: string
   venue: string
-  location: string
+  address?: string
+  city?: string
+  imageUrl?: string
   price?: number
   capacity?: number
   soldTickets: number
@@ -31,6 +35,29 @@ interface Event {
   createdAt: string
   image?: string
   category?: string
+  // New fields for ticket calculations from API
+  totalCapacity?: number
+  totalSold?: number
+  remainingSpots?: number
+  minPrice?: number
+  categoriesCount?: number
+  availabilityStatus?: string
+  categories?: Array<{
+    id: string
+    name: string
+    price: number
+    capacity: number
+    sold: number
+    remaining: number
+  }>
+  ticketTiers?: Array<{
+    id: string
+    name: string
+    price: number
+    capacity: number
+    sold: number
+    remaining: number
+  }>
 }
 
 export default function AdminEventsPage() {
@@ -57,7 +84,12 @@ export default function AdminEventsPage() {
         setEvents(data.events.map((event: any) => ({
           ...event,
           id: event._id || event.id, // Ensure we always have an id property
-          soldTickets: event.soldTickets || 0,
+          image: event.imageUrl, // Map imageUrl to image
+          location: event.city || event.address || 'TBA',
+          // Use calculated fields from API
+          capacity: event.totalCapacity || 0,
+          soldTickets: event.totalSold || 0,
+          price: event.minPrice || 0,
           status: event.status || 'DRAFT'
         })))
       } else {
@@ -145,6 +177,33 @@ export default function AdminEventsPage() {
       default:
         return `${baseClasses} bg-gray-400 bg-opacity-20 text-gray-300 border border-gray-400`
     }
+  }
+
+  // Helper function to get availability ribbon based on ticket data
+  const getAvailabilityRibbon = (event: Event) => {
+    const remainingSpots = event.remainingSpots || (event.capacity || 0) - (event.soldTickets || 0)
+    const totalCapacity = event.capacity || 0
+
+    if (totalCapacity === 0) {
+      return { color: 'bg-gray-500', text: 'NO TICKETS' }
+    }
+
+    if (remainingSpots === 0) {
+      return { color: 'bg-red-500', text: 'SOLD OUT' }
+    } else if (totalCapacity > 0 && (remainingSpots / totalCapacity) <= 0.1) {
+      return { color: 'bg-orange-500', text: `${remainingSpots} LEFT` }
+    } else if (totalCapacity > 0 && (remainingSpots / totalCapacity) <= 0.25) {
+      return { color: 'bg-yellow-500', text: `${remainingSpots} LEFT` }
+    } else {
+      return { color: 'bg-green-500', text: `${remainingSpots} AVAILABLE` }
+    }
+  }
+
+  // Helper function to get tickets sold percentage
+  const getTicketsSoldPercentage = (event: Event): number => {
+    const totalCapacity = event.capacity || 0
+    const soldTickets = event.soldTickets || 0
+    return totalCapacity > 0 ? Math.round((soldTickets / totalCapacity) * 100) : 0
   }
 
   return (
@@ -287,109 +346,128 @@ export default function AdminEventsPage() {
 
           {/* Events Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.map((event) => (
-              <div key={event.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
-                <div className="relative h-48 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 overflow-hidden">
-                  {event.image ? (
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600"></div>
-                  )}
-                  <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                  <div className="absolute top-4 right-4">
-                    <span className={getStatusBadge(event.status)}>
-                      {event.status}
-                    </span>
+            {events.map((event) => {
+              const availabilityRibbon = getAvailabilityRibbon(event)
+              const ticketsSoldPercentage = getTicketsSoldPercentage(event)
+
+              return (
+                <div key={event._id || event.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl overflow-hidden hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
+                  {/* Availability Ribbon */}
+                  <div className={`absolute top-4 right-4 z-10 ${availabilityRibbon.color} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg transform rotate-12`}>
+                    {availabilityRibbon.text}
                   </div>
-                  <div className="absolute top-4 left-4">
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-white text-sm font-medium">{event.category}</span>
+
+                  <div className="relative h-48 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 overflow-hidden">
+                    {(event.image || event.imageUrl) ? (
+                      <img
+                        src={event.image || event.imageUrl}
+                        alt={event.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600"></div>
+                    )}
+                    <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                    <div className="absolute top-4 left-4">
+                      <span className={getStatusBadge(event.status)}>
+                        {event.status}
+                      </span>
                     </div>
-                  </div>
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <h3 className="text-xl font-bold">{event.title}</h3>
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  <p className="text-gray-300 mb-4 line-clamp-2">{event.description}</p>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center text-gray-300">
-                      <Calendar className="h-4 w-4 mr-3 text-blue-400" />
-                      <span>{new Date(event.date).toLocaleDateString()}</span>
-                    </div>
-
-                    <div className="flex items-center text-gray-300">
-                      <Users className="h-4 w-4 mr-3 text-green-400" />
-                      <span>{event.venue}, {event.location}</span>
-                    </div>
-
-                    <div className="flex items-center text-gray-300">
-                      <DollarSign className="h-4 w-4 mr-3 text-purple-400" />
-                      <span>{event.price}€ • {event.soldTickets}/{event.capacity} sold</span>
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-xl font-bold">{event.title}</h3>
                     </div>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-300 mb-2">
-                      <span>Tickets sold</span>
-                      <span>{event.capacity ? Math.round((event.soldTickets / event.capacity) * 100) : 0}%</span>
-                    </div>
-                    <div className="w-full bg-white/20 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${event.capacity ? (event.soldTickets / event.capacity) * 100 : 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  <div className="p-6">
+                    <p className="text-gray-300 mb-4 line-clamp-2">{event.description}</p>
 
-                  {/* Action Buttons */}
-                  <div className="flex justify-between items-center">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/admin/events/${event.id}/edit`}
-                        className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        title="Edit Event"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                      <Link
-                        href={`/events/${event.id}`}
-                        className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-                        title="View Event"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <button
-                        className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete Event"
-                        onClick={() => handleDeleteEvent(event)}
-                        disabled={deletingId === event.id}
-                      >
-                        {deletingId === event.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </button>
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center text-gray-300">
+                        <Calendar className="h-4 w-4 mr-3 text-blue-400" />
+                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                      </div>
+
+                      <div className="flex items-center text-gray-300">
+                        <Users className="h-4 w-4 mr-3 text-green-400" />
+                        <span>{event.venue}{event.address ? ', ' + event.address : ''}{event.city ? ', ' + event.city : ''}</span>
+                      </div>
+
+                      <div className="flex items-center text-gray-300">
+                        <DollarSign className="h-4 w-4 mr-3 text-purple-400" />
+                        <span>
+                          {event.ticketTiers && event.ticketTiers.length > 0
+                            ? 'From ' + Math.min(...event.ticketTiers.map((tier: any) => tier.price)) + '€'
+                            : event.minPrice
+                              ? 'From ' + event.minPrice + '€'
+                              : (event.price ? event.price + '€' : 'Price TBD')
+                          }
+                          • {event.totalSold || 0}/{event.totalCapacity || 0} sold
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-sm text-gray-400">
-                        Revenue: <span className="text-white font-medium">{event.price ? (event.soldTickets * event.price).toLocaleString() : 'N/A'}€</span>
+                    {/* Progress bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between text-sm text-gray-300 mb-2">
+                        <span>Tickets sold</span>
+                        <span>{ticketsSoldPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-white/20 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${ticketsSoldPercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-between items-center">
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/admin/events/${event._id || event.id}/edit`}
+                          className="text-blue-400 hover:text-blue-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                          title="Edit Event"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/events/${event._id || event.id}`}
+                          className="text-green-400 hover:text-green-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                          title="View Event"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <button
+                          className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete Event"
+                          onClick={() => handleDeleteEvent(event)}
+                          disabled={deletingId === (event._id || event.id)}
+                        >
+                          {deletingId === (event._id || event.id) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400">
+                          Revenue: <span className="text-white font-medium">
+                            {event.ticketTiers && event.ticketTiers.length > 0
+                              ? 'Multi-tier' // Revenue calculation would need order data for multi-tier events
+                              : event.price && event.totalSold
+                                ? (event.totalSold * event.price).toLocaleString() + '€'
+                                : 'N/A'
+                            }
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {events.length === 0 && (

@@ -2,6 +2,8 @@ import Header from '@/components/Header'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { ShoppingBag, DollarSign, Eye, Download, CheckCircle, Clock } from 'lucide-react'
+import connectDB from '@/lib/database'
+import { Order, User } from '@/lib/schemas'
 
 export default async function AdminOrdersPage() {
   const { userId } = await auth()
@@ -17,61 +19,56 @@ export default async function AdminOrdersPage() {
     redirect('/')
   }
 
-  // Mock orders data - replace with MongoDB query
-  const orders = [
-    {
-      id: 'order_1',
-      userId: 'user_123',
-      userName: 'John Doe',
-      userEmail: 'john@example.com',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      totalAmount: 150,
-      status: 'CONFIRMED',
-      orderDate: '2025-01-10T10:00:00Z',
-      tickets: [
-        { id: 'ticket_1', ticketType: 'General Admission', price: 75 },
-        { id: 'ticket_2', ticketType: 'General Admission', price: 75 }
-      ]
-    },
-    {
-      id: 'order_2',
-      userId: 'user_456',
-      userName: 'Jane Smith',
-      userEmail: 'jane@example.com',
-      eventId: '2',
-      eventTitle: 'Rock Concert Extravaganza',
-      eventDate: '2025-08-20',
-      totalAmount: 130,
-      status: 'PENDING',
-      orderDate: '2025-01-12T14:30:00Z',
-      tickets: [
-        { id: 'ticket_3', ticketType: 'VIP', price: 65 },
-        { id: 'ticket_4', ticketType: 'VIP', price: 65 }
-      ]
-    },
-    {
-      id: 'order_3',
-      userId: 'user_789',
-      userName: 'Bob Johnson',
-      userEmail: 'bob@example.com',
-      eventId: '1',
-      eventTitle: 'Summer Music Festival 2025',
-      eventDate: '2025-07-15',
-      totalAmount: 45,
-      status: 'CANCELLED',
-      orderDate: '2025-01-08T09:15:00Z',
-      tickets: [
-        { id: 'ticket_5', ticketType: 'Early Bird', price: 45 }
-      ]
-    }
-  ]
+  // Fetch real orders data from MongoDB
+  let orders: any[] = []
+  let totalOrders = 0
 
-  const totalOrders = orders.length
-  const confirmedOrders = orders.filter(order => order.status === 'CONFIRMED')
-  const pendingOrders = orders.filter(order => order.status === 'PENDING')
-  const totalRevenue = confirmedOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+  try {
+    await connectDB()
+
+    // Get orders with populated data (limit to 50 for admin overview)
+    const ordersData = await Order.find()
+      .populate('user', 'name email clerkId')
+      .populate('event', 'title date venue')
+      .populate({
+        path: 'tickets',
+        populate: {
+          path: 'category',
+          select: 'name price'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .limit(50)
+
+    totalOrders = await Order.countDocuments()
+
+    // Format orders
+    orders = ordersData.map(order => ({
+      id: order._id.toString(),
+      orderNumber: order.orderNumber,
+      userId: order.user?.clerkId || 'unknown',
+      userName: order.user?.name || 'Unknown User',
+      userEmail: order.user?.email || 'unknown@email.com',
+      eventId: order.event?._id?.toString() || 'unknown',
+      eventTitle: order.event?.title || 'Unknown Event',
+      eventDate: order.event?.date?.toISOString() || null,
+      totalAmount: order.totalAmount,
+      status: order.status,
+      orderDate: order.createdAt.toISOString(),
+      tickets: order.tickets?.map((ticket: any) => ({
+        id: ticket._id.toString(),
+        ticketType: ticket.category?.name || 'Unknown Type',
+        price: ticket.price,
+        status: ticket.status
+      })) || []
+    }))
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+  }
+
+  const confirmedOrders = orders.filter((order: any) => order.status === 'CONFIRMED')
+  const pendingOrders = orders.filter((order: any) => order.status === 'PENDING')
+  const totalRevenue = confirmedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0)
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -2,7 +2,8 @@ import crypto from 'crypto'
 import QRCode from 'qrcode'
 
 // Secret key for HMAC signing (in production, store in environment variables)
-const SECRET_KEY = process.env.QR_SECRET_KEY || 'your-secret-key-for-qr-codes-change-in-production'
+// Support both QR_SECRET_KEY and QR_SECRET env names
+const SECRET_KEY = process.env.QR_SECRET_KEY || process.env.QR_SECRET || 'your-secret-key-for-qr-codes-change-in-production'
 
 interface TicketData {
   ticketId: string
@@ -51,8 +52,31 @@ function verifySignature(data: string, signature: string): boolean {
  */
 export function generateSecureTicketData(ticketData: TicketData): SignedTicketData {
   const timestamp = Date.now()
-  const eventDateTime = new Date(`${ticketData.eventDate} ${ticketData.eventTime}`)
-  const expiryDate = new Date(eventDateTime.getTime() + (24 * 60 * 60 * 1000)).toISOString() // 24 hours after event
+
+  // Robust event date parsing to avoid Invalid time value
+  const parseEventDateTime = (dateStr?: string, timeStr?: string): Date => {
+    // Try direct parse first (covers ISO strings like 2025-10-02T18:00:00.000Z)
+    if (dateStr) {
+      const direct = new Date(dateStr)
+      if (!isNaN(direct.getTime())) return direct
+    }
+    // If date is likely a date-only string and time provided, try ISO composition
+    if (dateStr && timeStr) {
+      const isoGuess = `${dateStr}T${timeStr.length === 5 ? timeStr : `${timeStr}:00`}`
+      const dt = new Date(isoGuess)
+      if (!isNaN(dt.getTime())) return dt
+    }
+    // Fallback to purchase date if valid
+    if (ticketData.purchaseDate) {
+      const pd = new Date(ticketData.purchaseDate)
+      if (!isNaN(pd.getTime())) return pd
+    }
+    // Last resort: now
+    return new Date()
+  }
+
+  const baseEventDate = parseEventDateTime(ticketData.eventDate, ticketData.eventTime)
+  const expiryDate = new Date(baseEventDate.getTime() + (24 * 60 * 60 * 1000)).toISOString() // 24 hours after event
 
   // Create data string for signing
   const dataToSign = JSON.stringify({
@@ -79,7 +103,7 @@ export async function generateQRCode(signedData: SignedTicketData): Promise<stri
   try {
     // Encode the signed data as JSON
     const qrData = JSON.stringify(signedData)
-    
+
     // Generate QR code with high error correction and good size
     const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
       errorCorrectionLevel: 'H',
@@ -113,7 +137,7 @@ export function validateQRCode(qrDataString: string): ValidationResult {
   try {
     // Parse QR data
     const signedData: SignedTicketData = JSON.parse(qrDataString)
-    
+
     // Extract signature and data
     const { signature, ...ticketData } = signedData
     const dataToVerify = JSON.stringify({
@@ -162,7 +186,7 @@ export async function generateTicketWithQR(ticketData: TicketData): Promise<{
 }> {
   const signedData = generateSecureTicketData(ticketData)
   const qrCodeImage = await generateQRCode(signedData)
-  
+
   return {
     signedData,
     qrCodeImage

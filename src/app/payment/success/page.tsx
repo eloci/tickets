@@ -14,46 +14,23 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     if (sessionId) {
-      // Send ticket email automatically when payment is successful
-      const sendTicketEmail = async () => {
+      // Try to finalize order in case webhook did not run
+      const go = async () => {
         try {
-          console.log('Sending ticket email for session:', sessionId)
-
-          const response = await fetch('/api/send-ticket-email', {
+          const res = await fetch('/api/checkout/confirm', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              sessionId,
-              customerEmail: 'ensar.loci@gmail.com', // Use your actual email
-              customerName: 'Ensar Loci'
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
           })
-
-          const result = await response.json()
-
-          if (result.success) {
-            console.log('✅ Ticket email sent successfully!')
-          } else {
-            console.error('❌ Failed to send ticket email:', result.error)
-          }
-        } catch (error) {
-          console.error('❌ Error sending ticket email:', error)
+          // Whether created or idempotent, we still show success UI
+          setSessionData({ id: sessionId })
+        } catch (e) {
+          console.error('Finalize order fallback error:', e)
+        } finally {
+          setLoading(false)
         }
       }
-
-      // Send the email
-      sendTicketEmail()
-
-      // Set the session data for display
-      setSessionData({
-        id: sessionId,
-        eventTitle: 'Your Event',
-        customerEmail: 'ensar.loci@gmail.com',
-        totalAmount: 89
-      })
-      setLoading(false)
+      go()
     }
   }, [sessionId])
 
@@ -95,11 +72,11 @@ function PaymentSuccessContent() {
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <Mail className="h-5 w-5 text-pink-400" />
-                <span>Email Sent</span>
+                <span>Payment confirmed</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <Smartphone className="h-5 w-5 text-pink-400" />
-                <span>Wallet Ready</span>
+                <span>Check your email</span>
               </div>
             </div>
           </div>

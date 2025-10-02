@@ -60,14 +60,14 @@ export default function ProfilePage() {
       const fetchData = async () => {
         try {
           // Fetch user stats
-          const statsResponse = await fetch('/api/profile/stats')
+          const statsResponse = await fetch('/api/profile/stats', { cache: 'no-store' })
           if (statsResponse.ok) {
             const statsData = await statsResponse.json()
             setStats(statsData)
           }
 
           // Fetch recent orders
-          const ordersResponse = await fetch('/api/orders?limit=3')
+          const ordersResponse = await fetch('/api/orders?limit=3', { cache: 'no-store' })
           if (ordersResponse.ok) {
             const ordersData = await ordersResponse.json()
             // Ensure ordersData is an array before slicing
@@ -118,6 +118,8 @@ export default function ProfilePage() {
     }
   }
 
+  // Removed dev-only seed button and logic; profile relies solely on real data
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
@@ -144,10 +146,13 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-            <button className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center">
+            <Link
+              href="/profile/edit"
+              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -203,6 +208,8 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+
 
         {/* Navigation Tabs */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 mb-8">

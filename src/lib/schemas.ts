@@ -27,6 +27,7 @@ const CategorySchema = new mongoose.Schema({
   price: { type: Number, required: true },
   totalTickets: { type: Number, required: true },
   soldTickets: { type: Number, default: 0 },
+  benefits: { type: [String], default: [] },
   event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
 }, { timestamps: true })
 
@@ -38,7 +39,14 @@ const OrderSchema = new mongoose.Schema({
   status: { type: String, enum: ['PENDING', 'CONFIRMED', 'CANCELLED'], default: 'PENDING' },
   paymentMethod: String,
   paymentIntentId: String,
-}, { timestamps: true })
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } })
+
+// Virtual populate: tickets belonging to this order
+OrderSchema.virtual('tickets', {
+  ref: 'Ticket',
+  localField: '_id',
+  foreignField: 'order'
+})
 
 const TicketSchema = new mongoose.Schema({
   ticketNumber: { type: String, required: true, unique: true },

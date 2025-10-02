@@ -50,6 +50,7 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const [expandedTicketIds, setExpandedTicketIds] = useState<Record<string, boolean>>({})
 
   // Debounce search term
   useEffect(() => {
@@ -145,6 +146,66 @@ export default function OrdersPage() {
     } catch (error) {
       console.error('Error resending tickets:', error)
       alert('Error resending tickets. Please try again.')
+    }
+  }
+
+  const toggleTicket = (ticketId: string) => {
+    setExpandedTicketIds(prev => ({ ...prev, [ticketId]: !prev[ticketId] }))
+  }
+
+  const handleDownloadQR = (ticket: OrderTicket) => {
+    try {
+      if (!ticket.qrCode) return
+      const link = document.createElement('a')
+      link.href = ticket.qrCode
+      link.download = `${ticket.id}.png`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (e) {
+      console.error('Failed to download QR:', e)
+      alert('Could not download QR image.')
+    }
+  }
+
+  const handleDownloadDetails = (order: Order, ticket: OrderTicket) => {
+    try {
+      const details = {
+        ticket: {
+          id: ticket.id,
+          type: ticket.type,
+          seat: ticket.seat,
+          price: ticket.price,
+          used: ticket.used,
+          usedAt: ticket.usedAt || null,
+        },
+        order: {
+          id: order.id,
+          purchaseDate: order.purchaseDate,
+          status: order.status,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+        },
+        event: {
+          title: order.eventTitle,
+          date: order.eventDate,
+          time: order.eventTime,
+          venue: order.venue,
+          image: order.eventImage || null,
+        }
+      }
+      const blob = new Blob([JSON.stringify(details, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${ticket.id}-details.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Failed to download details:', e)
+      alert('Could not download ticket details.')
     }
   }
 
@@ -263,25 +324,53 @@ export default function OrdersPage() {
                         <h4 className="text-white font-medium mb-3">Tickets</h4>
                         <div className="space-y-2">
                           {order.tickets.map((ticket: any) => (
-                            <div key={ticket.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                <QrCode className="h-5 w-5 text-white/70" />
-                                <div>
-                                  <span className="text-white font-medium">{ticket.type}</span>
-                                  {ticket.seat && <span className="text-white/70 ml-2">• {ticket.seat}</span>}
-                                  <div className="text-white/50 text-xs">#{ticket.id}</div>
+                            <div key={ticket.id} className="p-3 bg-white/5 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <QrCode className="h-5 w-5 text-white/70" />
+                                  <div>
+                                    <span className="text-white font-medium">{ticket.type}</span>
+                                    {ticket.seat && <span className="text-white/70 ml-2">• {ticket.seat}</span>}
+                                    <div className="text-white/50 text-xs">#{ticket.id}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="text-right mr-2">
+                                    <div className="text-white font-medium">${ticket.price.toFixed(2)}</div>
+                                    {ticket.used ? (
+                                      <div className="text-green-400 text-xs">
+                                        Used {ticket.usedAt && new Date(ticket.usedAt).toLocaleDateString()}
+                                      </div>
+                                    ) : (
+                                      <div className="text-blue-400 text-xs">Valid</div>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => toggleTicket(ticket.id)}
+                                    className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-md text-xs"
+                                  >
+                                    {expandedTicketIds[ticket.id] ? 'Hide QR' : 'Show QR'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDownloadQR(ticket)}
+                                    className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-md text-xs"
+                                  >
+                                    Download QR
+                                  </button>
+                                  <button
+                                    onClick={() => handleDownloadDetails(order, ticket)}
+                                    className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-md text-xs"
+                                  >
+                                    Download Details
+                                  </button>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-white font-medium">${ticket.price.toFixed(2)}</div>
-                                {ticket.used ? (
-                                  <div className="text-green-400 text-xs">
-                                    Used {ticket.usedAt && new Date(ticket.usedAt).toLocaleDateString()}
-                                  </div>
-                                ) : (
-                                  <div className="text-blue-400 text-xs">Valid</div>
-                                )}
-                              </div>
+                              {expandedTicketIds[ticket.id] && ticket.qrCode && (
+                                <div className="mt-3 p-3 bg-white/5 rounded-md border border-white/10">
+                                  <div className="text-white/70 text-xs mb-2">Scan this QR at the venue entrance</div>
+                                  <img src={ticket.qrCode} alt={`QR for ${ticket.id}`} className="w-40 h-40 object-contain bg-white rounded" />
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -290,7 +379,7 @@ export default function OrdersPage() {
                       {/* Action Buttons */}
                       <div className="flex flex-wrap gap-3">
                         <Link
-                          href={`/orders/${order.id}`}
+                          href={`/orders/${order.id}/confirmation`}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
                         >
                           <Eye className="h-4 w-4 mr-2" />

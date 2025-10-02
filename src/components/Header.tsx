@@ -56,6 +56,11 @@ export default function Header() {
             <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
             </Link>
+            {isLoaded && user && (
+              <Link href="/profile" className="text-gray-300 hover:text-white transition-colors">
+                Profile
+              </Link>
+            )}
           </nav>
 
           {/* Auth Section */}

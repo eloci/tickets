@@ -6,7 +6,7 @@ import { Order, Event, User } from '@/lib/schemas'
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || 'all'
+    const limitParam = Number(searchParams.get('limit') || 0)
 
     const clerkUser = await (await import('@clerk/nextjs/server')).currentUser()
     const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress
@@ -40,15 +41,15 @@ export async function GET(request: NextRequest) {
     }
 
     let orderQuery: any = { user: user._id }
-    
+
     if (status !== 'all') {
       orderQuery.status = status.toUpperCase()
     }
 
-    let orders = await Order.find(orderQuery)
+    let query = Order.find(orderQuery)
       .populate({
         path: 'event',
-        select: 'title venue date image'
+        select: 'title venue date imageUrl'
       })
       .populate({
         path: 'tickets',
@@ -58,9 +59,15 @@ export async function GET(request: NextRequest) {
         }
       })
       .sort({ createdAt: -1 })
+      .setOptions({ strictPopulate: false })
+    if (limitParam > 0) {
+      query = query.limit(limitParam)
+    }
+
+    let orders = await query
 
     if (search) {
-      orders = orders.filter(order => 
+      orders = orders.filter(order =>
         order.event?.title?.toLowerCase().includes(search.toLowerCase()) ||
         order.event?.venue?.toLowerCase().includes(search.toLowerCase())
       )
@@ -70,10 +77,10 @@ export async function GET(request: NextRequest) {
       id: order._id.toString(),
       eventTitle: order.event?.title || 'Unknown Event',
       eventDate: order.event?.date ? new Date(order.event.date).toISOString().split('T')[0] : '',
-      eventTime: order.event?.date ? new Date(order.event.date).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+      eventTime: order.event?.date ? new Date(order.event.date).toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: false 
+        hour12: false
       }) : '',
       venue: order.event?.venue || 'Unknown Venue',
       totalAmount: order.totalAmount || 0,
@@ -81,7 +88,7 @@ export async function GET(request: NextRequest) {
       status: order.status?.toLowerCase() || 'pending',
       ticketsCount: order.tickets?.length || 0,
       purchaseDate: new Date(order.createdAt).toISOString().split('T')[0],
-      eventImage: order.event?.image || null,
+      eventImage: order.event?.imageUrl || null,
       tickets: (order.tickets || []).map((ticket: any) => ({
         id: ticket._id.toString(),
         type: ticket.category?.name || 'General',
@@ -103,7 +110,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     const newOrder = {
       id: `order_${Date.now()}`,
       userId: body.userId,

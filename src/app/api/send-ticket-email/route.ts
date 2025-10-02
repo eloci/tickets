@@ -1,85 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendTicketEmail } from '@/lib/email-service'
 import { generateTicketWithQR } from '@/lib/qr-generator'
+import connectDB from '@/lib/database'
+import { Order, Ticket, User } from '@/lib/schemas'
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId, customerEmail, customerName } = await request.json()
+    const body = await request.json()
+    const { orderId, customerEmail: emailOverride, customerName: nameOverride } = body || {}
 
-    if (!sessionId || !customerEmail) {
-      return NextResponse.json(
-        { error: 'Session ID and customer email are required' },
-        { status: 400 }
-      )
+    if (!orderId) {
+      return NextResponse.json({ error: 'orderId is required' }, { status: 400 })
     }
 
-    console.log('Manually sending ticket email for session:', sessionId)
+    await connectDB()
+    const order = await Order.findById(orderId)
+      .populate({ path: 'event', select: 'title date time venue' })
+      .populate('user', 'email name')
+      .setOptions({ strictPopulate: false })
 
-    // For demo/testing purposes, create mock ticket data
-    const mockEventData = {
-      eventTitle: 'Demo Concert Event',
-      eventDate: '2025-10-15',
-      eventTime: '20:00',
-      venue: 'Demo Arena',
-      totalAmount: 89.00,
-      currency: 'USD'
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    // Generate a demo ticket with QR code
-    const ticketData = {
-      ticketId: `demo_${Date.now()}`,
-      eventId: 'demo_event',
-      eventTitle: mockEventData.eventTitle,
-      userId: customerEmail,
-      userEmail: customerEmail,
-      tierName: 'General Admission',
-      seatNumber: 'GA-001',
-      purchaseDate: new Date().toISOString(),
-      eventDate: mockEventData.eventDate,
-      eventTime: mockEventData.eventTime,
-      venue: mockEventData.venue,
-      price: mockEventData.totalAmount
+    const customerEmail = emailOverride || order.user?.email
+    const customerName = nameOverride || order.user?.name || 'Customer'
+    if (!customerEmail) {
+      return NextResponse.json({ error: 'No customer email found for order' }, { status: 400 })
     }
 
-    console.log('Generating QR code for ticket:', ticketData.ticketId)
-    const { signedData, qrCodeImage } = await generateTicketWithQR(ticketData)
+    const tickets = await Ticket.find({ order: order._id }).populate('category', 'name price').lean()
+
+    // Prepare ticket items with QR images (use stored QR, or generate if missing)
+    const emailTickets = [] as Array<{ ticketId: string; tierName: string; seatNumber: string; price: number; qrCodeImage: string }>
+    for (const t of tickets as any[]) {
+      let qrCodeImage: string | undefined = t.qrCode
+      let ticketId = t.ticketNumber || (t._id ? t._id.toString() : '')
+      const tierName = (t as any).category?.name || 'General'
+      const price = (t as any).category?.price || 0
+      const seatNumber = t.ticketNumber || `T-${(t._id ? t._id.toString() : '').slice(-6)}`
+
+      if (!qrCodeImage) {
+        const { qrCodeImage: generatedQr } = await generateTicketWithQR({
+          ticketId,
+          eventId: order.event?._id?.toString() || '',
+          eventTitle: order.event?.title || 'Event',
+          userId: customerEmail,
+          userEmail: customerEmail,
+          tierName,
+          seatNumber,
+          purchaseDate: new Date(order.createdAt).toISOString(),
+          eventDate: order.event?.date ? new Date(order.event.date).toISOString().split('T')[0] : '',
+          eventTime: order.event?.time || '',
+          venue: order.event?.venue || '',
+          price
+        })
+        qrCodeImage = generatedQr
+      }
+
+      emailTickets.push({ ticketId, tierName, seatNumber, price, qrCodeImage: qrCodeImage! })
+    }
 
     const emailData = {
       customerEmail,
-      customerName: customerName || 'Customer',
-      eventTitle: mockEventData.eventTitle,
-      eventDate: mockEventData.eventDate,
-      eventTime: mockEventData.eventTime,
-      venue: mockEventData.venue,
-      tickets: [{
-        ticketId: signedData.ticketId,
-        tierName: signedData.tierName || 'General Admission',
-        seatNumber: signedData.seatNumber || 'GA-001',
-        price: signedData.price,
-        qrCodeImage
-      }],
-      totalAmount: mockEventData.totalAmount,
-      currency: mockEventData.currency
+      customerName,
+      eventTitle: order.event?.title || 'Event',
+      eventDate: order.event?.date ? new Date(order.event.date).toISOString().split('T')[0] : '',
+      eventTime: order.event?.time || '',
+      venue: order.event?.venue || '',
+      tickets: emailTickets,
+      totalAmount: order.totalAmount || 0,
+      currency: 'EUR'
     }
 
-    console.log('Sending ticket email to:', customerEmail)
     await sendTicketEmail(emailData)
-    console.log('✅ Ticket email sent successfully!')
-
-    return NextResponse.json({
-      success: true,
-      message: 'Ticket email sent successfully',
-      ticketId: signedData.ticketId
-    })
-
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('❌ Error sending manual ticket email:', error)
-    return NextResponse.json(
-      { 
-        error: `Failed to send ticket email: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        details: error instanceof Error ? error.stack : 'No stack trace'
-      },
-      { status: 500 }
-    )
+    console.error('Error sending ticket email:', error)
+    return NextResponse.json({ error: 'Failed to send ticket email' }, { status: 500 })
   }
 }
