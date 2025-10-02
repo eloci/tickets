@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { auth } from '@clerk/nextjs/server';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
+                               process.env.CLOUDINARY_API_KEY && 
+                               process.env.CLOUDINARY_API_SECRET;
+
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+} else {
+  console.warn('⚠️ Cloudinary not configured. File uploads will use base64 data URLs.');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,26 +76,54 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create upload directory
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
+    // Convert file to buffer for processing
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
     const filename = `${timestamp}-${randomString}.${fileExtension}`;
-    const filepath = join(uploadDir, filename);
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    let imageUrl: string;
 
-    const imageUrl = `/uploads/${filename}`;
-    console.log('✅ File uploaded successfully:', imageUrl);
+    if (isCloudinaryConfigured) {
+      // Upload to Cloudinary
+      const publicId = `uploads/${timestamp}-${randomString}`;
+      
+      const uploadResponse = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'image',
+            public_id: publicId,
+            folder: 'concert-tickets',
+            transformation: [
+              { width: 1500, height: 1500, crop: 'limit' },
+              { quality: 'auto:good' }
+            ]
+          },
+          (error, result) => {
+            if (error) {
+              console.error('❌ Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              console.log('✅ Cloudinary upload success:', result?.secure_url);
+              resolve(result);
+            }
+          }
+        ).end(buffer);
+      });
+
+      imageUrl = (uploadResponse as any).secure_url;
+      console.log('✅ File uploaded successfully to Cloudinary:', imageUrl);
+    } else {
+      // Fallback: Convert to base64 data URL (temporary solution)
+      const base64 = buffer.toString('base64');
+      const mimeType = file.type || 'image/png';
+      imageUrl = `data:${mimeType};base64,${base64}`;
+      console.log('⚠️ Using base64 fallback (configure Cloudinary for production)');
+    }
 
     return NextResponse.json({
       success: true,
