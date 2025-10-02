@@ -87,7 +87,7 @@ export const authOptions: NextAuthOptions = {
   //   signOut: '/auth/signout',
   //   error: '/auth/error',
   // },
-  
+
   // Migrating to Clerk - this file will be deprecated
 
   secret: process.env.NEXTAUTH_SECRET,

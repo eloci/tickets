@@ -21,9 +21,9 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     setLoading(true)
-    
+
     try {
       const result = await signIn('credentials', {
         email,
@@ -31,7 +31,7 @@ export default function SignInPage() {
         callbackUrl: '/admin',
         redirect: false,
       })
-      
+
       if (result?.ok) {
         // Let NextAuth handle the redirect to callbackUrl
         router.refresh()
@@ -53,7 +53,7 @@ export default function SignInPage() {
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-gray-300">Sign in to your account</p>
         </div>
-        
+
         <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -103,7 +103,7 @@ export default function SignInPage() {
               </button>
             </div>
           </form>
-          
+
           <div className="mt-6">
             <p className="text-center text-sm text-gray-300">
               Admin email: admin@admin.com

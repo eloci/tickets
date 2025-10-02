@@ -10,7 +10,7 @@ export default async function AdminUsersPage() {
           <Users className="h-8 w-8 text-purple-400" />
           <h1 className="text-3xl font-bold text-white">Users Management</h1>
         </div>
-        
+
         <div className="bg-white/10 backdrop-blur-sm rounded-xl shadow-xl p-6">
           <div className="text-center text-white">
             <p>User management functionality is coming soon.</p>

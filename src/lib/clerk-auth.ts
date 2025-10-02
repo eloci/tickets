@@ -30,11 +30,11 @@ export async function requireAuth() {
 
 export async function requireAdmin() {
   const user = await requireAuth();
-  
+
   // For now, we're using Clerk's organization membership as a proxy for admin role
   // This can be enhanced with proper role checking from privateMetadata
   const { orgId } = auth();
-  
+
   // TODO: Implement proper role checking based on organization membership
   console.log(`[Auth] Allowing admin access for user: ${user.id}`);
   return user;
@@ -42,7 +42,7 @@ export async function requireAdmin() {
 
 export async function getUserById(id: string) {
   if (!id) return null;
-  
+
   try {
     const user = await clerkClient.users.getUser(id);
     return {
@@ -52,7 +52,9 @@ export async function getUserById(id: string) {
       name: user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Unknown',
       image: user.imageUrl,
       role: user.privateMetadata?.role as string || 'USER',
-    }
+    };
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    return null;
   }
-  return null
 }

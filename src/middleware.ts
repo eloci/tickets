@@ -7,14 +7,14 @@ export default authMiddleware({
     "/about",
     "/contact",
     "/terms",
-    "/privacy", 
+    "/privacy",
     "/events",
     "/events/(.*)",
     "/api/webhooks(.*)",
     "/api/stripe/webhook",
     "/api/checkout/confirm",
   ],
-  
+
   // Routes that can always be accessed, and have
   // no authentication information
   ignoredRoutes: [
