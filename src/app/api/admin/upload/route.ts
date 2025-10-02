@@ -3,9 +3,9 @@ import { auth } from '@clerk/nextjs/server';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary
-const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
-                               process.env.CLOUDINARY_API_KEY && 
-                               process.env.CLOUDINARY_API_SECRET;
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET;
 
 if (isCloudinaryConfigured) {
   cloudinary.config({
@@ -20,12 +20,12 @@ if (isCloudinaryConfigured) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Upload request received...');
-    
+
     // Set proper content type header to ensure JSON response
     const headers = {
       'Content-Type': 'application/json',
     };
-    
+
     // Auth check
     const { userId } = await auth();
     if (!userId) {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Get form data
     const formData = await request.formData();
     console.log('📋 Form data entries:', Array.from(formData.keys()));
-    
+
     // Try both 'file' and 'files' keys
     let file = formData.get('file') as File;
     if (!file) {
@@ -55,20 +55,20 @@ export async function POST(request: NextRequest) {
       console.log('Form data keys:', Array.from(formData.keys()));
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
-    
+
     console.log('📁 File found:', file.name, 'Size:', file.size, 'Type:', file.type);
 
     // Validate file
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const maxSize = 10 * 1024 * 1024; // 10MB
-    
+
     if (!allowedTypes.includes(file.type)) {
       console.log('❌ Invalid file type:', file.type);
       return NextResponse.json({
         error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.'
       }, { status: 400 });
     }
-    
+
     if (file.size > maxSize) {
       console.log('❌ File too large:', file.size);
       return NextResponse.json({
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     if (isCloudinaryConfigured) {
       // Upload to Cloudinary
       const publicId = `uploads/${timestamp}-${randomString}`;
-      
+
       const uploadResponse = await new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
@@ -130,17 +130,17 @@ export async function POST(request: NextRequest) {
       imageUrl,
       filename,
       files: [imageUrl] // Add this for compatibility with existing code
-    }, { 
+    }, {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('❌ Error uploading file:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to upload file',
         message: error instanceof Error ? error.message : 'Unknown error'
       },
-      { 
+      {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       }
