@@ -115,6 +115,16 @@ export default function Header() {
                             </div>
                           </Link>
                           <Link
+                            href="/profile/settings"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            onClick={() => handleNavigation('/profile/settings')}
+                          >
+                            <div className="flex items-center">
+                              <Settings className="h-4 w-4 mr-3" />
+                              Account Settings
+                            </div>
+                          </Link>
+                          <Link
                             href="/events"
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                             onClick={() => handleNavigation('/events')}
@@ -185,15 +195,21 @@ export default function Header() {
                               <Link
                                 href="/admin/content/past-events"
                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  setIsProfileOpen(false)
-                                  window.location.href = '/admin/content/past-events'
-                                }}
+                                onClick={() => handleNavigation('/admin/content/past-events')}
                               >
                                 <div className="flex items-center">
                                   <FileText className="h-4 w-4 mr-3" />
                                   Past Events
+                                </div>
+                              </Link>
+                              <Link
+                                href="/demo-orders"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                onClick={() => handleNavigation('/demo-orders')}
+                              >
+                                <div className="flex items-center">
+                                  <CreditCard className="h-4 w-4 mr-3" />
+                                  Demo Orders
                                 </div>
                               </Link>
                             </>
@@ -295,6 +311,13 @@ export default function Header() {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       My Orders
+                    </Link>
+                    <Link
+                      href="/profile/settings"
+                      className="text-gray-300 hover:text-white transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Account Settings
                     </Link>
                     <SignOutButton>
                       <button

@@ -113,7 +113,7 @@ export default function DemoOrdersPage() {
 
       const result = await response.json()
       setSuccess(`Demo order created successfully! Order ID: ${result.orderId}`)
-      
+
       // Optionally redirect to the order page
       setTimeout(() => {
         router.push(`/orders/${result.orderId}`)
@@ -158,7 +158,7 @@ export default function DemoOrdersPage() {
                 <Calendar className="h-5 w-5 mr-2" />
                 Event Details
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
@@ -169,7 +169,7 @@ export default function DemoOrdersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
                   <input
@@ -179,7 +179,7 @@ export default function DemoOrdersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Venue</label>
                   <input
@@ -198,7 +198,7 @@ export default function DemoOrdersPage() {
                 <User className="h-5 w-5 mr-2" />
                 Customer Details
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
@@ -209,7 +209,7 @@ export default function DemoOrdersPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer Email</label>
                   <input
@@ -237,7 +237,7 @@ export default function DemoOrdersPage() {
                   Add Category
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 {orderData.tickets.map((ticket, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4">
@@ -250,7 +250,7 @@ export default function DemoOrdersPage() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -261,7 +261,7 @@ export default function DemoOrdersPage() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
                         <input
@@ -271,7 +271,7 @@ export default function DemoOrdersPage() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                         <input
@@ -294,7 +294,7 @@ export default function DemoOrdersPage() {
             {/* Order Preview */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Order Preview</h2>
-              
+
               <div className="space-y-4">
                 <div className="border-b border-gray-200 pb-4">
                   <h3 className="font-semibold text-lg text-gray-900">{orderData.eventTitle}</h3>
@@ -334,7 +334,7 @@ export default function DemoOrdersPage() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="border-t border-gray-200 mt-4 pt-4">
                     <div className="flex justify-between items-center text-lg font-bold">
                       <span>Total</span>

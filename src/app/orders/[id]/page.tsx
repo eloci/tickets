@@ -57,7 +57,7 @@ export default function OrderPage() {
     try {
       setLoading(true)
       const response = await fetch(`/api/orders/${orderId}`)
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           setError('Order not found')
@@ -83,7 +83,7 @@ export default function OrderPage() {
     try {
       const response = await fetch(`/api/orders/${orderId}/pdf`)
       if (!response.ok) throw new Error('Failed to download PDF')
-      
+
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -177,7 +177,7 @@ export default function OrderPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Orders
           </Link>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -259,12 +259,12 @@ export default function OrderPage() {
                     <p className="text-sm text-gray-600">Ticket #{ticket.ticketNumber}</p>
                     <p className="text-lg font-semibold text-gray-900">${ticket.category.price.toFixed(2)}</p>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
                       {ticket.status}
                     </span>
-                    
+
                     {ticket.status === 'ACTIVE' && (
                       <div className="flex space-x-2">
                         <Link

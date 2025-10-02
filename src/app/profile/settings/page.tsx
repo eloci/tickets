@@ -147,7 +147,7 @@ export default function ProfileSettingsPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
           </Link>
-          
+
           <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
           <p className="text-gray-600 mt-2">Manage your account preferences and notification settings</p>
         </div>
@@ -171,7 +171,7 @@ export default function ProfileSettingsPage() {
                 <User className="h-5 w-5 mr-2" />
                 Personal Information
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
@@ -182,7 +182,7 @@ export default function ProfileSettingsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                   <input
@@ -193,7 +193,7 @@ export default function ProfileSettingsPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                 <input
@@ -204,7 +204,7 @@ export default function ProfileSettingsPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Email can be changed in your Clerk account settings</p>
               </div>
-              
+
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
@@ -223,7 +223,7 @@ export default function ProfileSettingsPage() {
                 <Bell className="h-5 w-5 mr-2" />
                 Notification Preferences
               </h2>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -240,7 +240,7 @@ export default function ProfileSettingsPage() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">Event Reminders</h3>
@@ -256,7 +256,7 @@ export default function ProfileSettingsPage() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">Marketing Emails</h3>
@@ -272,7 +272,7 @@ export default function ProfileSettingsPage() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900">SMS Notifications</h3>
@@ -296,13 +296,12 @@ export default function ProfileSettingsPage() {
               <button
                 onClick={saveSettings}
                 disabled={loading}
-                className={`inline-flex items-center px-6 py-2 rounded-lg font-medium transition-colors ${
-                  saveStatus === 'saved'
+                className={`inline-flex items-center px-6 py-2 rounded-lg font-medium transition-colors ${saveStatus === 'saved'
                     ? 'bg-green-600 text-white'
                     : saveStatus === 'error'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                } disabled:bg-gray-400 disabled:cursor-not-allowed`}
+                      ? 'bg-red-600 text-white'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } disabled:bg-gray-400 disabled:cursor-not-allowed`}
               >
                 {saveStatus === 'saving' && (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -310,7 +309,7 @@ export default function ProfileSettingsPage() {
                 {saveStatus === 'saved' && <Check className="h-4 w-4 mr-2" />}
                 {saveStatus === 'error' && <X className="h-4 w-4 mr-2" />}
                 {saveStatus === 'idle' && <Save className="h-4 w-4 mr-2" />}
-                
+
                 {saveStatus === 'saving' && 'Saving...'}
                 {saveStatus === 'saved' && 'Saved!'}
                 {saveStatus === 'error' && 'Error'}
@@ -337,7 +336,7 @@ export default function ProfileSettingsPage() {
                     </div>
                   </div>
                 </Link>
-                
+
                 <Link
                   href="/profile/orders"
                   className="block p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50"
@@ -373,7 +372,7 @@ export default function ProfileSettingsPage() {
                   <span className="text-gray-900">2 weeks ago</span>
                 </div>
               </div>
-              
+
               <button className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                 Manage Security Settings
               </button>

@@ -25,7 +25,7 @@ function PaymentCancelContent() {
   const fetchOrderData = async () => {
     try {
       if (!orderId) return
-      
+
       const response = await fetch(`/api/orders/${orderId}`)
       if (response.ok) {
         const data = await response.json()
@@ -67,7 +67,7 @@ function PaymentCancelContent() {
           <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
             Payment Cancelled
           </h2>
-          
+
           <p className="text-lg text-gray-600 mb-8">
             Your payment was cancelled and no charges were made to your account.
           </p>
@@ -143,7 +143,7 @@ function PaymentCancelContent() {
           {/* Additional Info */}
           <div className="mt-8 text-xs text-gray-500">
             <p>
-              Order reservations expire after 15 minutes. 
+              Order reservations expire after 15 minutes.
               {orderData && (
                 <span className="block mt-1">
                   Complete your payment soon to secure your tickets.

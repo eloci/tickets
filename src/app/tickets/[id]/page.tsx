@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Download, 
-  Wallet, 
-  ArrowLeft, 
-  QrCode, 
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Download,
+  Wallet,
+  ArrowLeft,
+  QrCode,
   Share2,
   AlertCircle,
   Check,
@@ -77,7 +77,7 @@ export default function TicketPage() {
     try {
       setLoading(true)
       const response = await fetch(`/api/tickets/${ticketId}`)
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           setError('Ticket not found')
@@ -103,7 +103,7 @@ export default function TicketPage() {
     try {
       const response = await fetch(`/api/tickets/${ticketId}/wallet/${type}`)
       if (!response.ok) throw new Error(`Failed to download ${type} wallet pass`)
-      
+
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -206,7 +206,7 @@ export default function TicketPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <Header />
-      
+
       <div className="py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Navigation */}
@@ -229,8 +229,8 @@ export default function TicketPage() {
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(ticket.status)}
                       <span className="text-white font-semibold">
-                        {ticket.status === 'ACTIVE' ? 'Valid Ticket' : 
-                         ticket.status === 'USED' ? 'Used Ticket' : 'Cancelled Ticket'}
+                        {ticket.status === 'ACTIVE' ? 'Valid Ticket' :
+                          ticket.status === 'USED' ? 'Used Ticket' : 'Cancelled Ticket'}
                       </span>
                     </div>
                     <span className="text-white/80 text-sm">#{ticket.ticketNumber}</span>
@@ -246,10 +246,10 @@ export default function TicketPage() {
                       className="w-full h-48 object-cover rounded-lg mb-6"
                     />
                   )}
-                  
+
                   <h1 className="text-2xl font-bold text-gray-900 mb-2">{ticket.event.title}</h1>
                   <p className="text-gray-600 mb-4">{ticket.event.description}</p>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="flex items-center text-gray-600">
                       <Calendar className="h-5 w-5 mr-3" />
@@ -258,7 +258,7 @@ export default function TicketPage() {
                         <p className="text-sm">{formatDate(ticket.event.date)}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center text-gray-600">
                       <MapPin className="h-5 w-5 mr-3" />
                       <div>
@@ -275,11 +275,11 @@ export default function TicketPage() {
                       <h3 className="font-semibold text-gray-900">{ticket.category.name}</h3>
                       <span className="text-xl font-bold text-gray-900">${ticket.category.price.toFixed(2)}</span>
                     </div>
-                    
+
                     {ticket.category.description && (
                       <p className="text-sm text-gray-600 mb-2">{ticket.category.description}</p>
                     )}
-                    
+
                     {ticket.category.benefits && ticket.category.benefits.length > 0 && (
                       <div>
                         <p className="text-sm font-medium text-gray-700 mb-1">Includes:</p>
@@ -301,7 +301,7 @@ export default function TicketPage() {
                       <div className="bg-gray-50 rounded-lg p-6 mb-4">
                         {showQR ? (
                           <div>
-                            <QRCodeDisplay 
+                            <QRCodeDisplay
                               ticketId={ticket.id}
                               categoryName={ticket.category.name}
                               ticketNumber={ticket.ticketNumber}
@@ -368,7 +368,7 @@ export default function TicketPage() {
                       <Wallet className="h-4 w-4 mr-2" />
                       Add to Apple Wallet
                     </button>
-                    
+
                     <button
                       onClick={() => downloadWalletPass('google')}
                       className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -376,7 +376,7 @@ export default function TicketPage() {
                       <Wallet className="h-4 w-4 mr-2" />
                       Add to Google Pay
                     </button>
-                    
+
                     <button
                       onClick={shareTicket}
                       className="w-full flex items-center justify-center px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30"
@@ -401,7 +401,7 @@ export default function TicketPage() {
                     <span className="text-white">{ticket.order.customerName}</span>
                   </div>
                 </div>
-                
+
                 <Link
                   href={`/orders/${ticket.order.id}`}
                   className="inline-flex items-center mt-4 text-blue-300 hover:text-blue-200"
@@ -420,7 +420,7 @@ export default function TicketPage() {
                     <span className="text-white">{ticket.event.organizer}</span>
                   </div>
                 </div>
-                
+
                 <Link
                   href={`/events/${ticket.event.id}`}
                   className="inline-flex items-center mt-4 text-blue-300 hover:text-blue-200"
