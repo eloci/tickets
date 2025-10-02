@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 export async function PUT(request: NextRequest) {
   try {
     const { userId } = await auth()
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
 
     // Here you could save user preferences to your database
     // For now, we'll just return success since Clerk handles the basic profile data
-    
+
     // Example: Save to your user preferences table
     /*
     await connectDB()
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
     )
     */
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
       data: {
@@ -55,14 +55,14 @@ export async function PUT(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Here you could fetch user preferences from your database
     // For now, we'll return default preferences
-    
+
     const defaultPreferences = {
       notifications: {
         emailNotifications: true,

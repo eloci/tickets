@@ -15,6 +15,7 @@ export default async function middleware(request: NextRequest) {
     "/past-events",
     "/sign-in",
     "/sign-up",
+    "/debug-user",
     "/api/health",
     "/api/events",
   ];
