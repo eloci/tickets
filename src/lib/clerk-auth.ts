@@ -1,60 +1,54 @@
-import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from './auth'
 import { redirect } from 'next/navigation'
 
 export async function getAuthUser() {
-  const { userId } = await auth()
-  console.log(`[Auth] User ID from auth(): ${userId}`)
-  if (!userId) return null
-
-  const clerkUser = await currentUser()
-  console.log(`[Auth] Current user from Clerk:`, clerkUser ? 'Found' : 'null')
-  if (!clerkUser) return null
-
-  // Return user data from Clerk, ensuring role is always lowercase
+  console.log('[Auth] Getting authenticated user...')
+  
+  const session = await getServerSession(authOptions)
+  console.log(`[Auth] Session from NextAuth:`, session?.user ? 'Found' : 'null')
+  
+  if (!session?.user) return null
+  
   return {
-    id: userId,
-    clerkId: userId,
-    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-    name: clerkUser.firstName
-      ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim()
-      : clerkUser.username,
-    image: clerkUser.imageUrl,
-    role: (clerkUser.publicMetadata?.role as string)?.toLowerCase() || 'user',
+    id: session.user.id,
+    clerkId: session.user.id, // Keep clerkId for compatibility
+    email: session.user.email || '',
+    name: session.user.name || 'Unknown',
+    image: session.user.image,
+    role: (session.user.role || 'user').toLowerCase(),
   }
 }
 
 export async function requireAuth() {
   const user = await getAuthUser()
   if (!user) {
-    redirect('/sign-in')
+    redirect('/auth/signin')
   }
   return user
 }
 
 export async function requireAdmin() {
   const user = await requireAuth()
-  // TEMPORARY: Allow any authenticated user to access admin functions
-  // TODO: Fix JWT template to include public_metadata for proper role checking
-  console.log(`[Auth] Allowing admin access for user: ${user.id} (temporary bypass)`)
+  // For now, allow any authenticated user to access admin functions
+  // TODO: Implement proper role checking
+  console.log(`[Auth] Allowing admin access for user: ${user.id}`)
   return user
 }
 
 export async function getUserById(id: string) {
-  try {
-    const clerk = await clerkClient()
-    const clerkUser = await clerk.users.getUser(id)
-    if (!clerkUser) return null
-
+  // TODO: Implement database lookup
+  // For now, return user if ID matches current session
+  const session = await getServerSession(authOptions)
+  if (session?.user?.id === id) {
     return {
-      id: clerkUser.id,
-      clerkId: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress || '',
-      name: clerkUser.firstName ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim() : null,
-      image: clerkUser.imageUrl,
-      role: clerkUser.publicMetadata?.role as string || 'USER',
+      id: session.user.id,
+      clerkId: session.user.id,
+      email: session.user.email || '',
+      name: session.user.name || 'Unknown',
+      image: session.user.image,
+      role: session.user.role || 'USER',
     }
-  } catch (error) {
-    console.error('Error fetching user:', error)
-    return null
   }
+  return null
 }

@@ -1,14 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import NextAuth from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
-// NextAuth endpoint is no longer used - Clerk handles authentication
-export async function GET(request: NextRequest) {
-  return NextResponse.json({ 
-    error: 'NextAuth is disabled - using Clerk for authentication' 
-  }, { status: 501 })
-}
+const handler = NextAuth(authOptions)
 
-export async function POST(request: NextRequest) {
-  return NextResponse.json({ 
-    error: 'NextAuth is disabled - using Clerk for authentication' 
-  }, { status: 501 })
-}
+export { handler as GET, handler as POST }

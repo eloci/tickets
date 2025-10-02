@@ -1,56 +1,70 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/about',
-  '/contact',
-  '/terms',
-  '/privacy',
-  '/auth(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/stripe/webhook',
-  '/api/checkout/confirm',
-])
+export default withAuth(
+  function middleware(req) {
+    const { pathname } = req.nextUrl
+    const token = req.nextauth.token
 
-const isAdminRoute = createRouteMatcher(['/admin(.*)'])
+    console.log(`[Middleware] Path: ${pathname}`)
+    console.log(`[Middleware] User: ${token?.email || 'None'}`)
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) {
-    return NextResponse.next()
-  }
+    // Admin route protection
+    if (pathname.startsWith('/admin')) {
+      console.log('[Middleware] Admin route detected.')
+      
+      if (!token) {
+        console.log('[Middleware] No token, redirecting to signin')
+        return NextResponse.redirect(new URL('/auth/signin', req.url))
+      }
 
-  const { userId } = await auth()
-
-  console.log(`[Middleware] Path: ${req.nextUrl.pathname}`)
-  console.log(`[Middleware] User ID: ${userId}`)
-
-  if (isAdminRoute(req)) {
-    console.log('[Middleware] Admin route detected.')
-
-    if (!userId) {
-      const signInUrl = new URL('/sign-in', req.url)
-      signInUrl.searchParams.set('redirect_url', req.url)
-      return NextResponse.redirect(signInUrl)
+      // For now, allow any authenticated user to access admin routes
+      // TODO: Implement proper role-based authorization
+      console.log('[Middleware] Allowing admin access')
     }
 
-    // TEMPORARY: Allow admin access for authenticated users
-    // TODO: Fix JWT template to include public_metadata
-    console.log('[Middleware] Allowing admin access (temporary bypass)')
-    // For now, allow any authenticated user to access admin routes
-    // We'll fix the proper role checking once JWT template is working
-  }
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl
+        
+        // Public routes that don't require authentication
+        const publicRoutes = [
+          '/',
+          '/about',
+          '/contact',
+          '/terms',
+          '/privacy',
+          '/events',
+          '/auth/signin',
+          '/auth/signup',
+          '/api/webhooks',
+          '/api/stripe/webhook',
+          '/api/checkout/confirm',
+        ]
 
-  if (!userId) {
-    const signInUrl = new URL('/sign-in', req.url)
-    signInUrl.searchParams.set('redirect_url', req.url)
-    return NextResponse.redirect(signInUrl)
-  }
+        // Check if it's a public route or starts with a public path
+        const isPublic = publicRoutes.some(route => 
+          pathname === route || pathname.startsWith('/events/') || pathname.startsWith('/api/stripe/')
+        )
 
-  return NextResponse.next()
-})
+        if (isPublic) {
+          return true
+        }
+
+        // Admin routes require authentication
+        if (pathname.startsWith('/admin')) {
+          return !!token
+        }
+
+        // Other protected routes require authentication
+        return !!token
+      }
+    }
+  }
+)
 
 export const config = {
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],

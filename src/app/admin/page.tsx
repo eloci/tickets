@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Settings, Calendar, Ticket as TicketIcon, DollarSign, Users, BarChart3, TrendingUp } from 'lucide-react'

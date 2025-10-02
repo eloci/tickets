@@ -1,7 +1,8 @@
 'use client'
 
 import Header from '@/components/Header'
-import { UserProfile } from '@clerk/nextjs'
+// Temporarily disabled - NextAuth doesn't have a UserProfile component
+// import { UserProfile } from '@clerk/nextjs'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
@@ -18,15 +19,9 @@ export default function EditProfilePage() {
           <h1 className="text-3xl font-bold text-white">Edit Profile</h1>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4">
-          <UserProfile routing="path" path="/profile/edit" appearance={{
-            elements: {
-              card: 'bg-transparent shadow-none',
-              headerTitle: 'text-white',
-              headerSubtitle: 'text-white/70',
-              rootBox: 'text-white',
-            }
-          }} />
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
+          <p className="text-white mb-4">Profile editing is temporarily disabled while we update authentication.</p>
+          <p className="text-white/70">Please contact support if you need to update your profile information.</p>
         </div>
       </div>
     </div>

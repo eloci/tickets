@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { ArrowLeft } from 'lucide-react'
 import PastEventForm from '@/components/admin/PastEventForm'
 

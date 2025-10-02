@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser, SignOutButton } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
+import { signOut, signIn } from 'next-auth/react'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ticket, User, LogOut, ChevronDown, CreditCard, Calendar, Menu, X, Settings, Shield, Globe, FileText } from 'lucide-react'

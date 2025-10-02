@@ -3,7 +3,6 @@ import { User, Event, Category, Order, Ticket } from '@/lib/schemas'
 import { generateTicketWithQR } from '@/lib/qr-generator'
 import { sendTicketEmail } from '@/lib/email-service'
 import { PaymentCompletedData } from '@/lib/stripe'
-import { clerkClient } from '@clerk/nextjs/server'
 
 export async function finalizeOrder(paymentData: PaymentCompletedData) {
   await connectDB()
@@ -19,25 +18,13 @@ export async function finalizeOrder(paymentData: PaymentCompletedData) {
   // Resolve/create user
   let appUser = await User.findOne({ email: paymentData.customerEmail })
   if (!appUser) {
-    try {
-      const clerk = await clerkClient()
-      const list = await clerk.users.getUserList({ emailAddress: [paymentData.customerEmail] })
-      const clerkUser = list?.data?.[0]
-      appUser = await User.create({
-        clerkId: clerkUser?.id || `external:${paymentData.customerEmail}`,
-        email: paymentData.customerEmail,
-        name: clerkUser?.fullName || paymentData.customerName,
-        image: clerkUser?.imageUrl,
-        role: 'USER'
-      })
-    } catch {
-      appUser = await User.create({
-        clerkId: `external:${paymentData.customerEmail}`,
-        email: paymentData.customerEmail,
-        name: paymentData.customerName,
-        role: 'USER'
-      })
-    }
+    // Create user from payment data (no Clerk lookup needed)
+    appUser = await User.create({
+      clerkId: `external:${paymentData.customerEmail}`,
+      email: paymentData.customerEmail,
+      name: paymentData.customerName,
+      role: 'USER'
+    })
   }
 
   // Event

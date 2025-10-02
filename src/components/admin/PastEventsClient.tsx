@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Calendar, Youtube, Edit } from 'lucide-react'
 import DeletePastEventButton from '@/components/admin/DeletePastEventButton'

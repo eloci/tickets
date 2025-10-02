@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
