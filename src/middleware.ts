@@ -15,7 +15,6 @@ export default async function middleware(request: NextRequest) {
     "/past-events",
     "/sign-in",
     "/sign-up",
-    "/debug-user",
     "/api/health",
     "/api/events",
   ];
@@ -37,13 +36,22 @@ export default async function middleware(request: NextRequest) {
 
   // For protected routes, check authentication
   try {
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
 
     if (!userId) {
       // Redirect to sign-in if not authenticated
       const signInUrl = new URL('/sign-in', request.url);
       signInUrl.searchParams.set('redirect_url', pathname);
       return NextResponse.redirect(signInUrl);
+    }
+
+    // Check for admin role for admin routes
+    if (pathname.startsWith('/admin')) {
+      const isAdmin = sessionClaims?.metadata?.role === 'ADMIN';
+      if (!isAdmin) {
+        // Redirect non-admins away from admin routes
+        return NextResponse.redirect(new URL('/', request.url));
+      }
     }
 
     return NextResponse.next();
