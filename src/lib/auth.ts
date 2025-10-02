@@ -82,9 +82,13 @@ export const authOptions: NextAuthOptions = {
     }
   },
 
-  pages: {
-    // Using NextAuth.js default pages
-  },
+  // pages: {
+  //   signIn: '/auth/signin',
+  //   signOut: '/auth/signout',
+  //   error: '/auth/error',
+  // },
+  
+  // Migrating to Clerk - this file will be deprecated
 
   secret: process.env.NEXTAUTH_SECRET,
 }

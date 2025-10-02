@@ -28,11 +28,13 @@ export default function SignInPage() {
       const result = await signIn('credentials', {
         email,
         password,
+        callbackUrl: '/admin',
         redirect: false,
       })
       
       if (result?.ok) {
-        router.push('/admin')
+        // Let NextAuth handle the redirect to callbackUrl
+        router.refresh()
       } else {
         alert('Invalid email or password')
       }
