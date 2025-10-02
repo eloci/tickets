@@ -24,7 +24,7 @@ if (typeof window !== 'undefined') {
   })
 }
 
-export default function QRScanner() {
+export function QRScanner() {
   const [scanResult, setScanResult] = useState<ValidationResult | null>(null)
   const [scanning, setScanning] = useState(false)
   const [manualInput, setManualInput] = useState('')
