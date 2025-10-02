@@ -2,29 +2,29 @@
 
 import { useState, useEffect } from 'react'
 import { redirect } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@/lib/use-user'
 import { QRScanner } from '@/components/admin'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminScanPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoaded, isSignedIn } = useUser()
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      redirect('/auth/signin')
+    if (isLoaded && !isSignedIn) {
+      redirect('/sign-in')
     }
 
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+    if (isLoaded && isSignedIn && user?.publicMetadata?.role === 'ADMIN') {
       setIsAdmin(true)
-    } else if (status === 'authenticated') {
+    } else if (isLoaded && isSignedIn) {
       // User is authenticated but not an admin
       redirect('/')
     }
-  }, [session, status])
+  }, [user, isLoaded, isSignedIn])
 
-  if (status === 'loading') {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 shadow-lg">

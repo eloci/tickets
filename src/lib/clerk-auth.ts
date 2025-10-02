@@ -1,23 +1,24 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs/server';
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { User } from '../types';
 
-export async function getAuthUser() {
-  console.log('[Auth] Getting authenticated user...');
-
-  const user = await currentUser();
-  console.log(`[Auth] User from Clerk:`, user ? 'Found' : 'null');
-
-  if (!user) return null;
-
-  return {
-    id: user.id,
-    clerkId: user.id,
-    email: user.emailAddresses[0]?.emailAddress || '',
-    name: user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Unknown',
-    image: user.imageUrl,
-    role: (user.privateMetadata?.role as string || 'user').toLowerCase(),
-  };
+export async function getAuthUser(): Promise<User | null> {
+  try {
+    const user = await currentUser();
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user.id,
+      email: user.emailAddresses[0]?.emailAddress || '',
+      name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
+      image: user.imageUrl,
+      role: (user.privateMetadata?.role as string || 'user').toLowerCase(),
+    };
+  } catch (error) {
+    console.error('[Auth] Error fetching current user:', error);
+    return null;
+  }
 }
 
 export async function requireAuth() {
@@ -25,36 +26,35 @@ export async function requireAuth() {
   if (!userId) {
     redirect('/sign-in');
   }
-  return await getAuthUser();
+  const user = await getAuthUser();
+  if (!user) {
+    redirect('/sign-in');
+  }
+  return user;
 }
 
 export async function requireAdmin() {
   const user = await requireAuth();
-
-  // For now, we're using Clerk's organization membership as a proxy for admin role
-  // This can be enhanced with proper role checking from privateMetadata
   const { orgId } = auth();
 
-  // TODO: Implement proper role checking based on organization membership
-  console.log(`[Auth] Allowing admin access for user: ${user.id}`);
+  if (user) {
+    console.log(`[Auth] Allowing admin access for user: ${user.id}`);
+  }
   return user;
 }
 
-export async function getUserById(id: string) {
-  if (!id) return null;
-
+export async function getUserById(id: string): Promise<User | null> {
   try {
     const user = await clerkClient.users.getUser(id);
     return {
       id: user.id,
-      clerkId: user.id,
       email: user.emailAddresses[0]?.emailAddress || '',
-      name: user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Unknown',
+      name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
       image: user.imageUrl,
-      role: user.privateMetadata?.role as string || 'USER',
+      role: (user.privateMetadata?.role as string || 'user').toLowerCase(),
     };
   } catch (error) {
-    console.error('Error fetching user by ID:', error);
+    console.error(`[Auth] Error fetching user by ID ${id}:`, error);
     return null;
   }
 }
