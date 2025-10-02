@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/database'
 import { User, Event, Category, Order, Ticket } from '@/lib/schemas'
 

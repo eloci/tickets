@@ -4,12 +4,12 @@ import { redirect } from 'next/navigation'
 
 export async function getAuthUser() {
   console.log('[Auth] Getting authenticated user...')
-  
+
   const session = await getServerSession(authOptions)
   console.log(`[Auth] Session from NextAuth:`, session?.user ? 'Found' : 'null')
-  
+
   if (!session?.user) return null
-  
+
   return {
     id: session.user.id,
     clerkId: session.user.id, // Keep clerkId for compatibility

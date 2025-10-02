@@ -3,10 +3,10 @@ import { useSession } from 'next-auth/react'
 // Custom hook to replace Clerk's useUser
 export function useUser() {
   const { data: session, status } = useSession()
-  
+
   const isLoaded = status !== 'loading'
   const isSignedIn = !!session?.user
-  
+
   const user = session?.user ? {
     id: session.user.id,
     emailAddresses: [{ emailAddress: session.user.email }],

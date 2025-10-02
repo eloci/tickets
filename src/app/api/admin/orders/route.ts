@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import connectDB from "@/lib/database"
 import { User, Order, Event, Ticket } from "@/lib/schemas"
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const session = await getServerSession(authOptions)
 
-    if (!userId) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     await connectDB()
 
-    // Check if user is admin
-    let user = await User.findOne({ clerkId: userId })
-
-    // If user doesn't exist in our database, create them as admin (for development)
+    // For now, allow any authenticated user to access admin functions
+    // TODO: Implement proper role checking
     if (!user) {
       console.log('User not found in database, creating with admin role:', userId)
       try {

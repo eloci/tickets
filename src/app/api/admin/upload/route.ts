@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary
@@ -27,12 +28,12 @@ export async function POST(request: NextRequest) {
     };
 
     // Auth check
-    const { userId } = await auth();
-    if (!userId) {
-      console.log('❌ No userId found');
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      console.log('❌ No user session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers });
     }
-    console.log('✅ User authenticated:', userId);
+    console.log('✅ User authenticated:', session.user.email);
 
     // Get form data
     const formData = await request.formData();

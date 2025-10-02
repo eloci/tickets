@@ -12,7 +12,7 @@ export default withAuth(
     // Admin route protection
     if (pathname.startsWith('/admin')) {
       console.log('[Middleware] Admin route detected.')
-      
+
       if (!token) {
         console.log('[Middleware] No token, redirecting to signin')
         return NextResponse.redirect(new URL('/auth/signin', req.url))
@@ -29,7 +29,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl
-        
+
         // Public routes that don't require authentication
         const publicRoutes = [
           '/',
@@ -46,7 +46,7 @@ export default withAuth(
         ]
 
         // Check if it's a public route or starts with a public path
-        const isPublic = publicRoutes.some(route => 
+        const isPublic = publicRoutes.some(route =>
           pathname === route || pathname.startsWith('/events/') || pathname.startsWith('/api/stripe/')
         )
 

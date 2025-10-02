@@ -1,23 +1,12 @@
 import Header from '@/components/Header'
-import { auth, clerkClient } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '@/lib/clerk-auth'
 import { ShoppingBag, DollarSign, Eye, Download, CheckCircle, Clock } from 'lucide-react'
 import connectDB from '@/lib/database'
 import { Order, User } from '@/lib/schemas'
 
 export default async function AdminOrdersPage() {
-  const { userId } = await auth()
-
-  if (!userId) {
-    redirect('/sign-in')
-  }
-
-  // Check if user is admin
-  const clerk = await clerkClient()
-  const user = await clerk.users.getUser(userId)
-  if (!user || user.publicMetadata?.role !== 'admin') {
-    redirect('/')
-  }
+  // Check admin access
+  await requireAdmin()
 
   // Fetch real orders data from MongoDB
   let orders: any[] = []

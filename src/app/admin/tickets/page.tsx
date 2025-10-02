@@ -44,7 +44,7 @@ interface TicketStats {
 }
 
 export default function AdminTicketsPage() {
-  const { userId, isLoaded } = useAuth()
+  const { user, isLoaded } = useUser()
   const [tickets, setTickets] = useState<TicketData[]>([])
   const [stats, setStats] = useState<TicketStats>({
     totalTickets: 0,
@@ -59,8 +59,8 @@ export default function AdminTicketsPage() {
   useEffect(() => {
     if (!isLoaded) return
 
-    if (!userId) {
-      redirect('/sign-in')
+    if (!user) {
+      redirect('/api/auth/signin')
       return
     }
 
@@ -93,7 +93,7 @@ export default function AdminTicketsPage() {
     }
 
     fetchTickets()
-  }, [userId, isLoaded])
+  }, [user, isLoaded])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
