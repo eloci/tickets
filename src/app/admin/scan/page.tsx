@@ -42,7 +42,7 @@ export default function AdminScanPage() {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Link 
+          <Link
             href="/admin"
             className="flex items-center text-blue-400 hover:text-blue-300 transition-colors"
           >
@@ -50,9 +50,9 @@ export default function AdminScanPage() {
             Back to Admin Dashboard
           </Link>
         </div>
-        
+
         <h1 className="text-3xl font-bold mb-6">Scan Tickets</h1>
-        
+
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 shadow-xl">
           <QRScanner />
         </div>

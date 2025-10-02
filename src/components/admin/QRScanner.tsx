@@ -373,8 +373,8 @@ export function QRScanner() {
                   clearUploadedImage()
                 }}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all ${scanMode === 'camera'
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <Camera className="h-4 w-4" />
@@ -387,8 +387,8 @@ export function QRScanner() {
                   setScanResult(null)
                 }}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all ${scanMode === 'upload'
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <Upload className="h-4 w-4" />
@@ -402,8 +402,8 @@ export function QRScanner() {
                   clearUploadedImage()
                 }}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all ${scanMode === 'manual'
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 <Type className="h-4 w-4" />
