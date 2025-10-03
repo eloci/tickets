@@ -7,6 +7,7 @@ import { PropsWithChildren } from "react";
 export function ClerkProviderWithTheme({ children }: PropsWithChildren) {
   return (
     <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       appearance={{
         baseTheme: dark,
         variables: {
