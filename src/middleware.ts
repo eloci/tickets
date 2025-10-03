@@ -54,9 +54,11 @@ export default async function middleware(request: NextRequest) {
       }
     }
 
+    // For any other protected route, just ensure the user is logged in.
     return NextResponse.next();
   } catch (error) {
     console.error('Auth middleware error:', error);
+    // In case of any error, redirect to sign-in
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 }

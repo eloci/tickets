@@ -19,21 +19,25 @@ export const metadata: Metadata = {
   description: "Book tickets for the best musical concerts and events. Secure QR code tickets delivered instantly to your email and mobile wallet.",
 };
 
+import { ClerkProvider } from "@clerk/nextjs";
+
+// ... existing code ...
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ClerkProviderWithTheme>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
           {children}
           <Toaster position="top-right" />
-        </ClerkProviderWithTheme>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
