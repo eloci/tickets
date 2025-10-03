@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
-import { ClerkProviderWithTheme } from "@/components/ClerkProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: "Book tickets for the best musical concerts and events. Secure QR code tickets delivered instantly to your email and mobile wallet.",
 };
 
-import { ClerkProvider } from "@clerk/nextjs";
+// NextAuth provider replaces Clerk
 
 // ... existing code ...
 
@@ -29,15 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <AuthProvider>
       <html lang="en">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           {children}
           <Toaster position="top-right" />
         </body>
       </html>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }

@@ -134,11 +134,11 @@ export default function ProfilePage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white mb-2">
-                  {user.fullName || `${user.firstName} ${user.lastName}` || 'User'}
+                  {user.name || 'User'}
                 </h1>
                 <p className="text-white/70 flex items-center">
                   <Mail className="h-4 w-4 mr-2" />
-                  {user.emailAddresses?.[0]?.emailAddress}
+                  {user.email}
                 </p>
                 <p className="text-white/70 flex items-center mt-1">
                   <Calendar className="h-4 w-4 mr-2" />
@@ -384,7 +384,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-white/70 text-sm font-medium mb-2">Email Address</label>
                   <div className="bg-white/10 border border-white/20 rounded-lg p-3 flex items-center justify-between">
-                    <span className="text-white">{user.emailAddresses?.[0]?.emailAddress}</span>
+                    <span className="text-white">{user.email}</span>
                     <button className="text-purple-300 hover:text-purple-100 text-sm">Change</button>
                   </div>
                 </div>

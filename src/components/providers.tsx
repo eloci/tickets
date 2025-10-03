@@ -1,13 +1,6 @@
 'use client'
-
-// This file is maintained for backwards compatibility 
-// The app now uses ClerkProvider from @/components/ClerkProvider.tsx
-import { ClerkProviderWithTheme } from './ClerkProvider'
+import { AuthProvider } from './AuthProvider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProviderWithTheme>
-      {children}
-    </ClerkProviderWithTheme>
-  )
+  return <AuthProvider>{children}</AuthProvider>
 }

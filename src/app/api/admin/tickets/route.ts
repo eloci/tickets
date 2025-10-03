@@ -14,25 +14,14 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    // Check if user is admin
-    let user = await User.findOne({ clerkId: userId })
-
-    // If user doesn't exist in our database, create them as admin (for development)
-    if (!user) {
-      console.log('User not found in database, creating with admin role:', userId)
-      try {
-        user = await User.create({
-          clerkId: userId,
-          email: 'admin@admin.com',
-          role: 'ADMIN'
-        })
-      } catch (error) {
-        console.error('Error creating user:', error)
-        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-      }
-    }
-
-    if (user.role !== 'ADMIN') {
+    // Enforce admin role
+    const dbUser = await User.findOne({
+      $or: [
+        { email: session.user.email },
+        { clerkId: `google:${session.user.id}` }
+      ]
+    })
+    if (!dbUser || (dbUser.role || 'USER').toUpperCase() !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -90,7 +79,7 @@ export async function GET(request: NextRequest) {
       eventId: ticket.order?.event?._id?.toString() || 'unknown',
       eventTitle: ticket.order?.event?.title || 'Unknown Event',
       eventDate: ticket.order?.event?.date?.toISOString() || null,
-      userId: ticket.order?.user?.clerkId || 'unknown',
+      userId: ticket.order?.user?.clerkId || ticket.order?.user?._id?.toString() || 'unknown',
       userName: ticket.order?.user?.name || 'Unknown User',
       userEmail: ticket.order?.user?.email || 'unknown@email.com',
       ticketType: ticket.category?.name || 'Unknown Type',

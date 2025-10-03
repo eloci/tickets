@@ -1,107 +1,59 @@
-# Copilot Instructions for Concert Ticket Booking System
+# Copilot Instructions – Tickets App
 
-This is a Next.js 14 full-stack application for concert ticket booking with QR codes, wallet integration, and multiple payment methods.
+Next.js full‑stack app for concert tickets: Stripe checkout, crypto‑signed QR codes, email delivery, and mobile wallet passes.
 
-## Architecture Overview
-- **Frontend:** Next.js 14 with TypeScript, Tailwind CSS, and React components
-- **Backend:** Next.js API routes with server-side logic
-- **Database:** PostgreSQL with Prisma ORM for type-safe database operations
-- **Authentication:** NextAuth.js with Google OAuth and credentials provider
-- **Payments:** Stripe (cards), PayPal, Apple Pay, Google Pay integration
-- **Email:** Nodemailer with HTML templates and QR code attachments
-- **QR Codes:** Crypto-signed QR codes for secure ticket validation
-- **Mobile Wallets:** Apple Wallet (.pkpass) and Google Pay pass generation
+## Architecture & Key Paths
+- App Router: `src/app/*` (pages + API). Shared libs in `src/lib/*`. UI in `src/components/*`.
+- Auth: Clerk. See `src/middleware.ts` for route protection and admin gating via `sessionClaims.publicMetadata.role === 'ADMIN'`. Helpers in `src/lib/clerk-auth.ts`.
+- Database: MongoDB via Mongoose (not Prisma). Connection in `src/lib/database.ts`; models in `src/lib/schemas.ts`.
+- Payments: Stripe Checkout. Core helpers in `src/lib/stripe.ts`; order finalization in `src/lib/stripe-order.ts`.
+- QR & Email: HMAC‑signed QR in `src/lib/qr-generator.ts`; Nodemailer HTML with inline QR in `src/lib/email-service.ts`.
+- Wallet: Apple/Google passes in `src/lib/wallet-generator.ts`; endpoints at `/api/wallet/{apple|google}/[ticketId]`.
 
-## Key Directories
-- `src/app/` - Next.js 14 App Router pages and API routes
-- `src/components/` - Reusable React components
-- `src/lib/` - Utility functions (auth, prisma, stripe, email, QR codes)
-- `prisma/` - Database schema and migrations
-- `src/types/` - TypeScript type definitions
+## Run & Build
+- Dev: `npm run dev` (Next 15, React 19, Turbopack).
+- Build/Start: `npm run build` → `npm start`.
+- Stripe webhook (production path): `POST /api/stripe/webhook` with `STRIPE_WEBHOOK_SECRET`.
+- Note: Docker/compose files mention Postgres/Prisma but app actually uses MongoDB. Use `DATABASE_URL` as a Mongo connection string.
 
-## Critical Workflows
+## Access Control Patterns
+- Public routes declared in `src/middleware.ts` via `createRouteMatcher([...])`.
+- Unauthed API requests → JSON 401; pages → redirect to `/sign-in` with `redirect_url` param.
+- Admin pages under `/admin` require `publicMetadata.role === 'ADMIN'` (or `metadata.role` fallback).
 
-### Database Operations
-```bash
-npx prisma generate    # Generate Prisma client after schema changes
-npx prisma db push     # Push schema changes to database
-npx prisma migrate dev # Create and apply migrations
-```
+## Data Model (Mongoose)
+- `User`: `{ clerkId, email, name, image, role: 'USER'|'ADMIN'|'ORGANIZER' }`.
+- `Event`, `Category`(ticket tier with `totalTickets/soldTickets`), `Order`(virtual `tickets`), `Ticket`(`status: VALID|USED|CANCELLED`), `Payment`.
+- Connect once via `connectDB()` before DB ops (see `stripe-order.finalizeOrder`).
 
-### Development Server
-```bash
-npm run dev           # Start development server
-npm run build         # Build for production
-npm run start         # Start production server
-```
+## Checkout → Fulfillment Flow
+1) Client posts to `POST /api/checkout` with event and `tickets[]` → server creates Stripe Checkout Session (`lib/stripe.createCheckoutSession`).
+2) On completion, either:
+	- Webhook `checkout.session.completed` → `finalizeOrder`, or
+	- Client call `POST /api/checkout/confirm` with `{ sessionId }` → `finalizeOrder`.
+3) `finalizeOrder` creates `Order`, issues `Ticket`s, updates `Category.soldTickets`, and sends email via `sendTicketEmail`.
+	- Idempotency: skips if `paymentIntentId` already processed.
 
-### Payment Integration
-- Stripe: Uses Checkout Sessions for secure payment processing
-- PayPal: Integrated with @paypal/react-paypal-js
-- Apple/Google Pay: Browser-native payment methods
-- All payments create Order records before processing
+## QR & Email Details
+- QR: `qr-generator.ts` signs JSON with HMAC SHA‑256 using `QR_SECRET_KEY` or `QR_SECRET`.
+- Expiry: 24h after event date/time; `validateQRCode()` enforces expiry and signature.
+- Email: `email-service.ts` embeds QR images via `cid:qr-<ticketId>`; includes wallet links pointing to `/api/wallet/...`.
 
-### QR Code System
-- QR codes contain encrypted ticket data with HMAC signatures
-- Validation includes timestamp checks (24h expiry)
-- Scanning updates ticket status to 'USED' with timestamp
-- Admin scanning interface at `/admin/scan`
+## Wallet Passes
+- Apple: `generateAppleWalletPass()` with `passkit-generator` and certificate files under `./certificates/*` (you must provide).
+- Google: `generateGooglePayPass()` returns a JWT placeholder; in production, sign with your Google key.
+- Current API routes use mock ticket data—replace with DB lookup by `ticketId`.
 
-### Email System
-- HTML emails with embedded QR code images
-- Wallet pass download links included
-- Nodemailer with SMTP configuration
-- Templates use inline CSS for email client compatibility
+## Conventions & Gotchas
+- Prefer Clerk helpers: `getAuthUser()/requireAuth()` from `src/lib/clerk-auth.ts` in server components/actions.
+- Stripe: require `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+- SMTP: set `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, optional `SENDER_EMAIL`.
+- Env: `DATABASE_URL` (Mongo), `QR_SECRET_KEY|QR_SECRET`, Clerk envs.
+- `next.config.ts` ignores ESLint/TS errors during build; keep changes type‑safe locally.
 
-## Database Schema Patterns
-- **Users:** NextAuth.js compatible with roles (USER, ADMIN, ORGANIZER)
-- **Events:** Concert events with categories (ticket types)
-- **Orders:** Shopping cart to payment flow with status tracking
-- **Tickets:** Individual tickets with QR codes and usage tracking
-- **Payments:** Separate payment record for audit trail
+Examples
+- Create checkout session: `POST /api/checkout` body shape matches `CreateCheckoutSessionData` in `src/lib/stripe.ts`.
+- Manually confirm order after redirect: `POST /api/checkout/confirm { sessionId }`.
 
-## Security Considerations
-- CSRF protection via middleware
-- SQL injection prevention with Prisma
-- QR code cryptographic signatures
-- Environment variable validation
-- Rate limiting on payment endpoints
-- HTTPS enforcement in production
-
-## Mobile Wallet Integration
-- Apple Wallet: Generates .pkpass files with event details and QR codes
-- Google Pay: JWT-signed pass objects for Google Pay API
-- Automatic pass updates when ticket status changes
-- Location-based notifications for venue proximity
-
-## Admin Features
-- Event creation with multiple ticket categories
-- Real-time ticket scanning with validation
-- Sales analytics and attendance tracking
-- Order management and refund processing
-- QR code validation dashboard
-
-## Common Development Patterns
-- Use `getServerSession(authOptions)` for server-side auth
-- Database queries through `prisma` client from `@/lib/prisma`
-- Error handling with try/catch and appropriate HTTP status codes
-- Type safety with Prisma-generated types
-- Toast notifications with react-hot-toast
-- Form validation with client and server-side checks
-
-## Payment Flow
-1. User selects tickets → Shopping cart
-2. Checkout creates pending Order with Tickets
-3. Payment processor handles secure payment
-4. Webhook confirms payment → Order status CONFIRMED
-5. Email sent with QR codes and wallet passes
-6. QR codes scanned at venue for entry
-
-## Deployment
-- Docker containerization with multi-stage builds
-- PostgreSQL and Redis via Docker Compose
-- Environment variable configuration
-- Health check endpoints at `/api/health`
-- Production optimizations in `next.config.js`
-
-When working with this codebase, always check existing patterns in similar components and follow the established authentication, database, and error handling conventions.
+Notes
+- README and Docker mention Postgres/Prisma; these are legacy. Use Mongoose models and MongoDB in this codebase.

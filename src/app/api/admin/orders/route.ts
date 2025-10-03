@@ -14,23 +14,14 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    // For now, allow any authenticated user to access admin functions
-    // TODO: Implement proper role checking
-    if (!user) {
-      console.log('User not found in database, creating with admin role:', userId)
-      try {
-        user = await User.create({
-          clerkId: userId,
-          email: 'admin@admin.com',
-          role: 'ADMIN'
-        })
-      } catch (error) {
-        console.error('Error creating user:', error)
-        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-      }
-    }
-
-    if (user.role !== 'ADMIN') {
+    // Enforce admin role from DB user
+    const dbUser = await User.findOne({
+      $or: [
+        { email: session.user.email },
+        { clerkId: `google:${session.user.id}` }
+      ]
+    })
+    if (!dbUser || (dbUser.role || 'USER').toUpperCase() !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -72,7 +63,7 @@ export async function GET(request: NextRequest) {
     const formattedOrders = orders.map(order => ({
       id: order._id.toString(),
       orderNumber: order.orderNumber,
-      userId: order.user?.clerkId || 'unknown',
+      userId: order.user?.clerkId || order.user?._id?.toString() || 'unknown',
       userName: order.user?.name || 'Unknown User',
       userEmail: order.user?.email || 'unknown@email.com',
       eventId: order.event?._id?.toString() || 'unknown',

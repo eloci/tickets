@@ -6,11 +6,8 @@ import { Order, User, Ticket } from '@/lib/schemas'
 
 export async function GET(_request: NextRequest) {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Try to connect to database
     try {
@@ -23,24 +20,15 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // Find user by Clerk ID or email
-    const clerkUser = await (await import('@clerk/nextjs/server')).currentUser()
-    const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress
-
-    let user = await User.findOne({
-      $or: [
-        { clerkId: userId },
-        { email: userEmail }
-      ]
-    })
-
-    // Auto-provision user doc if missing
-    if (!user && userEmail) {
+    const email = (session.user as any)?.email
+    const authId = (session.user as any)?.id || (session.user as any)?.sub
+    let user = await User.findOne(email ? { $or: [{ clerkId: `google:${authId}` }, { email }] } : { clerkId: `google:${authId}` })
+    if (!user) {
       user = await User.create({
-        clerkId: userId,
-        email: userEmail,
-        name: clerkUser?.fullName,
-        image: clerkUser?.imageUrl,
+        clerkId: `google:${authId}`,
+        email: email || 'unknown@example.com',
+        name: (session.user as any)?.name,
+        image: (session.user as any)?.image,
         role: 'USER'
       })
     }
@@ -76,8 +64,8 @@ export async function GET(_request: NextRequest) {
       ? Object.keys(venueCount).reduce((a, b) => venueCount[a] > venueCount[b] ? a : b)
       : 'None'
 
-    // Member since from Clerk user creation date or user document
-    const memberSince = new Date(clerkUser?.createdAt || user.createdAt || Date.now())
+    // Member since from user document
+    const memberSince = new Date(user.createdAt || Date.now())
       .toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long'

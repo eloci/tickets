@@ -6,9 +6,8 @@ import { Order, Event, User } from '@/lib/schemas'
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -27,15 +26,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'all'
     const limitParam = Number(searchParams.get('limit') || 0)
 
-    const clerkUser = await (await import('@clerk/nextjs/server')).currentUser()
-    const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress
+    const userEmail = (session?.user as any)?.email
 
-    const user = await User.findOne({
-      $or: [
-        { clerkId: userId },
-        { email: userEmail }
-      ]
-    })
+    const authId = (session.user as any)?.id || (session.user as any)?.sub
+    const user = await User.findOne({ $or: [{ clerkId: `google:${authId}` }, { email: userEmail }] })
 
     if (!user) {
       return NextResponse.json([])

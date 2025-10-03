@@ -1,9 +1,9 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import { Ticket, Calendar, MapPin, Clock, Plus, Trash2, User, Mail } from 'lucide-react'
+import { useState, useMemo } from "react"
+import { useUser } from "@/lib/use-user"
+import { useRouter } from "next/navigation"
+import { Ticket, Calendar, MapPin, Plus, Trash2, User } from "lucide-react"
 
 interface DemoOrderData {
   eventTitle: string
@@ -25,47 +25,25 @@ export default function DemoOrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const [orderData, setOrderData] = useState<DemoOrderData>({
-    eventTitle: 'Summer Music Festival 2025',
-    eventDate: '2025-07-15T19:00:00Z',
-    eventVenue: 'Central Park Amphitheater',
-    customerName: user?.fullName || 'John Doe',
-    customerEmail: user?.primaryEmailAddress?.emailAddress || 'john.doe@example.com',
+  // Initialize with memo so we pick up user details once loaded
+  const initialOrderData = useMemo<DemoOrderData>(() => ({
+    eventTitle: "Summer Music Festival 2025",
+    eventDate: "2025-07-15T19:00:00Z",
+    eventVenue: "Central Park Amphitheater",
+    customerName: user?.name || "John Doe",
+    customerEmail: user?.email || "john.doe@example.com",
     tickets: [
-      { category: 'General Admission', price: 75, quantity: 2 },
-      { category: 'VIP', price: 150, quantity: 1 }
-    ]
-  })
+      { category: "General Admission", price: 75, quantity: 2 },
+      { category: "VIP", price: 150, quantity: 1 },
+    ],
+  }), [user?.name, user?.email])
 
-  // Check if user is admin
-  const isAdmin = user?.publicMetadata?.role === 'admin'
+  const [orderData, setOrderData] = useState<DemoOrderData>(initialOrderData)
 
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    router.push('/sign-in')
-    return null
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-8">You need admin privileges to access this page.</p>
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Go Back
-          </button>
-        </div>
       </div>
     )
   }
@@ -79,7 +57,10 @@ export default function DemoOrdersPage() {
   const addTicketCategory = () => {
     setOrderData({
       ...orderData,
-      tickets: [...orderData.tickets, { category: 'New Category', price: 50, quantity: 1 }]
+      tickets: [
+        ...orderData.tickets,
+        { category: "New Category", price: 50, quantity: 1 },
+      ],
     })
   }
 
@@ -89,7 +70,10 @@ export default function DemoOrdersPage() {
   }
 
   const calculateTotal = () => {
-    return orderData.tickets.reduce((total, ticket) => total + (ticket.price * ticket.quantity), 0)
+    return orderData.tickets.reduce(
+      (total, ticket) => total + ticket.price * ticket.quantity,
+      0
+    )
   }
 
   const createDemoOrder = async () => {
@@ -98,17 +82,17 @@ export default function DemoOrdersPage() {
     setSuccess(null)
 
     try {
-      const response = await fetch('/api/create-sample-order', {
-        method: 'POST',
+      const response = await fetch("/api/create-sample-order", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(orderData),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create demo order')
+        throw new Error(errorData.error || "Failed to create demo order")
       }
 
       const result = await response.json()
@@ -118,10 +102,11 @@ export default function DemoOrdersPage() {
       setTimeout(() => {
         router.push(`/orders/${result.orderId}`)
       }, 2000)
-
     } catch (error) {
-      console.error('Error creating demo order:', error)
-      setError(error instanceof Error ? error.message : 'Failed to create demo order')
+      console.error("Error creating demo order:", error)
+      setError(
+        error instanceof Error ? error.message : "Failed to create demo order"
+      )
     } finally {
       setLoading(false)
     }
@@ -165,7 +150,9 @@ export default function DemoOrdersPage() {
                   <input
                     type="text"
                     value={orderData.eventTitle}
-                    onChange={(e) => setOrderData({ ...orderData, eventTitle: e.target.value })}
+                    onChange={(e) =>
+                      setOrderData({ ...orderData, eventTitle: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -175,7 +162,12 @@ export default function DemoOrdersPage() {
                   <input
                     type="datetime-local"
                     value={orderData.eventDate.slice(0, 16)}
-                    onChange={(e) => setOrderData({ ...orderData, eventDate: e.target.value + ':00Z' })}
+                    onChange={(e) =>
+                      setOrderData({
+                        ...orderData,
+                        eventDate: e.target.value + ":00Z",
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -185,7 +177,9 @@ export default function DemoOrdersPage() {
                   <input
                     type="text"
                     value={orderData.eventVenue}
-                    onChange={(e) => setOrderData({ ...orderData, eventVenue: e.target.value })}
+                    onChange={(e) =>
+                      setOrderData({ ...orderData, eventVenue: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -205,7 +199,9 @@ export default function DemoOrdersPage() {
                   <input
                     type="text"
                     value={orderData.customerName}
-                    onChange={(e) => setOrderData({ ...orderData, customerName: e.target.value })}
+                    onChange={(e) =>
+                      setOrderData({ ...orderData, customerName: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -215,7 +211,9 @@ export default function DemoOrdersPage() {
                   <input
                     type="email"
                     value={orderData.customerEmail}
-                    onChange={(e) => setOrderData({ ...orderData, customerEmail: e.target.value })}
+                    onChange={(e) =>
+                      setOrderData({ ...orderData, customerEmail: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -257,7 +255,9 @@ export default function DemoOrdersPage() {
                         <input
                           type="text"
                           value={ticket.category}
-                          onChange={(e) => updateTicket(index, 'category', e.target.value)}
+                          onChange={(e) =>
+                            updateTicket(index, "category", e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -267,7 +267,9 @@ export default function DemoOrdersPage() {
                         <input
                           type="number"
                           value={ticket.price}
-                          onChange={(e) => updateTicket(index, 'price', Number(e.target.value))}
+                          onChange={(e) =>
+                            updateTicket(index, "price", Number(e.target.value))
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -276,9 +278,11 @@ export default function DemoOrdersPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                         <input
                           type="number"
-                          min="1"
+                          min={1}
                           value={ticket.quantity}
-                          onChange={(e) => updateTicket(index, 'quantity', Number(e.target.value))}
+                          onChange={(e) =>
+                            updateTicket(index, "quantity", Number(e.target.value))
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -300,14 +304,16 @@ export default function DemoOrdersPage() {
                   <h3 className="font-semibold text-lg text-gray-900">{orderData.eventTitle}</h3>
                   <div className="flex items-center text-gray-600 mt-1">
                     <Calendar className="h-4 w-4 mr-2" />
-                    <span>{new Date(orderData.eventDate).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
+                    <span>
+                      {new Date(orderData.eventDate).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-600 mt-1">
                     <MapPin className="h-4 w-4 mr-2" />
@@ -330,7 +336,9 @@ export default function DemoOrdersPage() {
                           <span className="text-gray-900">{ticket.category}</span>
                           <span className="text-gray-600"> x{ticket.quantity}</span>
                         </div>
-                        <span className="font-semibold">${(ticket.price * ticket.quantity).toFixed(2)}</span>
+                        <span className="font-semibold">
+                          ${(ticket.price * ticket.quantity).toFixed(2)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -351,7 +359,7 @@ export default function DemoOrdersPage() {
               disabled={loading}
               className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
             >
-              {loading ? 'Creating Order...' : 'Create Demo Order'}
+              {loading ? "Creating Order..." : "Create Demo Order"}
             </button>
 
             {/* Info */}

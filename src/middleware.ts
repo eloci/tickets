@@ -1,29 +1,31 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { getToken } from 'next-auth/jwt';
 
-// Define public routes using Clerk helpers for clarity and maintainability
-const isPublicRoute = createRouteMatcher([
-  '/', '/about', '/contact', '/terms', '/privacy',
-  '/events', '/events/(.*)', '/past-events',
-  '/sign-in', '/sign-up',
+// Public routes pattern check
+const publicMatchers = [
+  /^\/$/, /^\/about$/, /^\/contact$/, /^\/terms$/, /^\/privacy$/,
+  /^\/events(\/.*)?$/, /^\/past-events$/, /^\/sign-in(\/.*)?$/, /^\/sign-up(\/.*)?$/,
   // Public APIs & webhooks
-  '/api/health', '/api/events', '/api/events/(.*)',
-  '/api/webhooks(.*)', '/api/stripe/webhook', '/api/checkout/confirm',
-]);
+  /^\/api\/health$/, /^\/api\/events(\/.*)?$/, /^\/api\/webhooks.*$/, /^\/api\/stripe\/webhook$/, /^\/api\/checkout\/confirm$/,
+];
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
+function isPublic(pathname: string) {
+  return publicMatchers.some((rx) => rx.test(pathname));
+}
+
+export default async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   // Allow public routes straight through
-  if (isPublicRoute(req)) {
+  if (isPublic(pathname)) {
     return NextResponse.next();
   }
 
   // Protect everything else
-  const { userId, sessionClaims } = await auth();
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
   // If unauthenticated: APIs get 401 JSON; pages redirect to sign-in
-  if (!userId) {
+  if (!token) {
     if (pathname.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -35,12 +37,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
   // Admin-only gate
   if (pathname.startsWith('/admin')) {
-    // Prefer publicMetadata.role (common) and fall back to metadata.role if your JWT includes it
-    const role =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sessionClaims as any)?.publicMetadata?.role ??
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sessionClaims as any)?.metadata?.role;
+    const role = (token as any)?.role as string | undefined;
 
     if (role !== 'ADMIN') {
       if (pathname.startsWith('/api')) {
@@ -51,7 +48,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   // Run on all routes except static files and _next

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import Link from 'next/link'
 import {
   Calendar,

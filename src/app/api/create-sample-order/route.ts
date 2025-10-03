@@ -6,26 +6,24 @@ import { User, Event, Category, Order, Ticket } from '@/lib/schemas'
 
 export async function POST(_request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     await connectDB()
 
-    const clerk = await currentUser()
-    const email = clerk?.emailAddresses?.[0]?.emailAddress
+    const email = (session.user as any)?.email
 
     // Ensure app user exists
+    const authId = (session.user as any)?.id || (session.user as any)?.sub
     let appUser = await User.findOne({
-      $or: [{ clerkId: userId }, { email }]
+      $or: [{ clerkId: `google:${authId}` }, { email }]
     })
     if (!appUser && email) {
       appUser = await User.create({
-        clerkId: userId,
+        clerkId: `google:${authId}`,
         email,
-        name: clerk?.fullName || undefined,
-        image: clerk?.imageUrl || undefined,
+        name: (session.user as any)?.name || undefined,
+        image: (session.user as any)?.image || undefined,
         role: 'USER'
       })
     }

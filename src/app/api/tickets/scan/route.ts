@@ -8,12 +8,11 @@ import { validateQRCode } from '@/lib/qr-generator'
 export async function POST(request: NextRequest) {
   try {
     // Auth: admins only
-    const { userId } = await auth()
-    if (!userId) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const clerkUser = await currentUser()
-    const role = (clerkUser?.publicMetadata as any)?.role || 'USER'
+    const role = (session.user as any)?.role || 'USER'
     if (role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }

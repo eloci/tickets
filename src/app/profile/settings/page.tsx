@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Save, User, Mail, Bell, Shield, CreditCard, ArrowLeft, Check, X } from 'lucide-react'
@@ -43,25 +43,18 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (!isLoaded) return
-
     if (!user) {
       router.push('/sign-in')
       return
     }
-
-    // Initialize settings from user data
-    setSettings({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.primaryEmailAddress?.emailAddress || '',
-      phone: user.primaryPhoneNumber?.phoneNumber || '',
-      notifications: {
-        emailNotifications: true,
-        eventReminders: true,
-        marketingEmails: false,
-        smsNotifications: false
-      }
-    })
+    const name = user.name || ''
+    const [firstName = '', lastName = ''] = name.split(' ')
+    setSettings((prev) => ({
+      ...prev,
+      firstName,
+      lastName,
+      email: user.email || '',
+    }))
   }, [user, isLoaded])
 
   const handleInputChange = (field: keyof UserSettings, value: string) => {
@@ -89,13 +82,7 @@ export default function ProfileSettingsPage() {
     setError(null)
 
     try {
-      // Update user profile via Clerk
-      await user.update({
-        firstName: settings.firstName,
-        lastName: settings.lastName
-      })
-
-      // You might want to save notification preferences to your database
+      // Save notification preferences to your database (no direct NextAuth profile update here)
       const response = await fetch('/api/profile/settings', {
         method: 'PUT',
         headers: {
@@ -202,7 +189,7 @@ export default function ProfileSettingsPage() {
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Email can be changed in your Clerk account settings</p>
+                <p className="text-xs text-gray-500 mt-1">Email comes from your Google account.</p>
               </div>
 
               <div className="mt-4">
@@ -297,10 +284,10 @@ export default function ProfileSettingsPage() {
                 onClick={saveSettings}
                 disabled={loading}
                 className={`inline-flex items-center px-6 py-2 rounded-lg font-medium transition-colors ${saveStatus === 'saved'
-                    ? 'bg-green-600 text-white'
-                    : saveStatus === 'error'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-green-600 text-white'
+                  : saveStatus === 'error'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                   } disabled:bg-gray-400 disabled:cursor-not-allowed`}
               >
                 {saveStatus === 'saving' && (

@@ -1,79 +1,38 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
 
 export async function checkApiAuth() {
-  const { userId } = auth();
-
-  if (!userId) {
-    return {
-      authenticated: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return { authenticated: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   }
-
-  try {
-    const user = await currentUser();
-
-    if (!user) {
-      return {
-        authenticated: false,
-        response: NextResponse.json({ error: 'User not found' }, { status: 404 }),
-      };
-    }
-
-    return {
-      authenticated: true,
-      user: {
-        id: user.id,
-        email: user.emailAddresses[0]?.emailAddress,
-        name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null,
-        image: user.imageUrl,
-        role: user.publicMetadata?.role || 'USER',
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return {
-      authenticated: false,
-      response: NextResponse.json({ error: 'Authentication error' }, { status: 500 }),
-    };
+  const u: any = session.user
+  return {
+    authenticated: true,
+    user: {
+      id: u.id || u.sub || '',
+      email: u.email,
+      name: u.name,
+      image: u.image,
+      role: u.role || 'USER',
+    },
   }
 }
 
 export function requireAuth() {
-  const { userId } = auth();
-
-  if (!userId) {
-    throw new Error('Unauthorized: Authentication required');
-  }
-
-  return userId;
+  throw new Error('Use checkApiAuth() in API routes to enforce authentication')
 }
 
 export async function requireAdmin() {
-  const userId = requireAuth();
-
-  try {
-    const user = await currentUser();
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const role = user.publicMetadata?.role as string;
-
-    if (role !== 'ADMIN') {
-      throw new Error('Forbidden: Admin access required');
-    }
-
-    return userId;
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    throw new Error('Authentication error');
+  const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
+  if (!role || role !== 'ADMIN') {
+    throw new Error('Forbidden: Admin access required')
   }
+  return (session?.user as any)?.id
 }
 
 export function getUserId() {
-  const { userId } = auth();
-  return userId;
+  return undefined
 }

@@ -9,10 +9,7 @@ export async function POST(_request: NextRequest) {
     // Disabled: demo seeding is turned off
     return NextResponse.json({ error: 'Seeding disabled' }, { status: 403 })
 
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Auth check not required since seeding is disabled
 
     // The previous seeding logic was removed to ensure only real data is used.
   } catch (error) {

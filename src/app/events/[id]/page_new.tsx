@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import Link from 'next/link'
 import {
   MapPin,
@@ -158,7 +158,7 @@ export default function EventDetailsPage() {
         return
       }
 
-      if (!user?.emailAddresses?.[0]?.emailAddress) {
+      if (!user?.email) {
         toast.error('Please sign in to purchase tickets')
         router.push('/sign-in')
         return
@@ -171,7 +171,7 @@ export default function EventDetailsPage() {
         eventTime: event.time || '19:00',
         venue: event.venue,
         tickets,
-        customerEmail: user.emailAddresses[0].emailAddress
+        customerEmail: user.email
       }
 
       toast.loading('Redirecting to checkout...')
@@ -275,8 +275,8 @@ export default function EventDetailsPage() {
                   <button
                     onClick={handleLike}
                     className={`p-3 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-200 ${isLiked
-                        ? 'bg-red-500 hover:bg-red-600 text-white'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
+                      ? 'bg-red-500 hover:bg-red-600 text-white'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
                   >
                     <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />

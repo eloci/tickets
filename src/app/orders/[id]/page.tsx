@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { Calendar, MapPin, Clock, Download, ExternalLink, ArrowLeft, QrCode, Wallet } from 'lucide-react'
 
 interface OrderDetails {

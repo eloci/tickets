@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ticket, User, LogOut, ChevronDown, CreditCard, Calendar, Menu, X, Settings, Shield, Globe, FileText } from 'lucide-react'
-import { useUser, UserButton, SignOutButton } from '@clerk/nextjs'
+import { useSession, signIn, signOut } from 'next-auth/react'
 
 export default function Header() {
-  const { user, isLoaded } = useUser()
+  const { data: session, status } = useSession()
+  const user = session?.user as any
   const router = useRouter()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function Header() {
             <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
             </Link>
-            {isLoaded && user && (
+            {status === 'authenticated' && user && (
               <Link href="/profile" className="text-gray-300 hover:text-white transition-colors">
                 Profile
               </Link>
@@ -65,7 +66,7 @@ export default function Header() {
 
           {/* Auth Section */}
           <div className="flex items-center space-x-4">
-            {!isLoaded ? (
+            {status === 'loading' ? (
               <div className="text-gray-300">Loading...</div>
             ) : user ? (
               <div className="flex items-center space-x-4">
@@ -80,7 +81,7 @@ export default function Header() {
                     <div className="h-8 w-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                       <User className="h-5 w-5" />
                     </div>
-                    <span className="hidden sm:block">{user.fullName || user.emailAddresses?.[0]?.emailAddress}</span>
+                    <span className="hidden sm:block">{user?.name || user?.email}</span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
 
@@ -136,7 +137,7 @@ export default function Header() {
                           </Link>
 
                           {/* Admin Menu Items - Only show for admin users */}
-                          {user && user.publicMetadata?.role === 'admin' && (
+                          {user && (user.role === 'ADMIN' || user.role === 'admin') && (
                             <>
                               <hr className="my-1 border-gray-200" />
                               <div className="px-3 py-1">
@@ -216,18 +217,19 @@ export default function Header() {
                           )}
 
                           <hr className="my-1 border-gray-200" />
-                          <SignOutButton>
-                            <button
-                              onClick={() => setIsProfileOpen(false)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                              type="button"
-                            >
-                              <div className="flex items-center">
-                                <LogOut className="h-4 w-4 mr-3" />
-                                Sign Out
-                              </div>
-                            </button>
-                          </SignOutButton>
+                          <button
+                            onClick={() => {
+                              setIsProfileOpen(false)
+                              signOut()
+                            }}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            type="button"
+                          >
+                            <div className="flex items-center">
+                              <LogOut className="h-4 w-4 mr-3" />
+                              Sign Out
+                            </div>
+                          </button>
                         </div>
                       </div>
                     </>
@@ -236,12 +238,12 @@ export default function Header() {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link
-                  href="/sign-in"
+                <button
+                  onClick={() => signIn('google')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Sign In
-                </Link>
+                </button>
                 <Link
                   href="/sign-up"
                   className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200"
@@ -319,25 +321,28 @@ export default function Header() {
                     >
                       Account Settings
                     </Link>
-                    <SignOutButton>
-                      <button
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-left text-gray-300 hover:text-white transition-colors"
-                      >
-                        Sign Out
-                      </button>
-                    </SignOutButton>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        signOut()
+                      }}
+                      className="text-left text-gray-300 hover:text-white transition-colors"
+                    >
+                      Sign Out
+                    </button>
                   </>
                 ) : (
                   <>
                     <hr className="border-white/10" />
-                    <Link
-                      href="/sign-in"
-                      className="text-gray-300 hover:text-white transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                    <button
+                      className="text-left text-gray-300 hover:text-white transition-colors"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        signIn('google')
+                      }}
                     >
                       Sign In
-                    </Link>
+                    </button>
                     <Link
                       href="/sign-up"
                       className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 text-center"

@@ -1,26 +1,23 @@
-import { useUser as useClerkUser } from '@clerk/nextjs'
+import { useSession } from 'next-auth/react'
 
-// Custom hook that provides a consistent interface regardless of auth provider
+// NextAuth-based user hook keeping a stable interface
 export function useUser() {
-  const { user, isLoaded } = useClerkUser()
+  const { data, status } = useSession()
+  const sessionUser = data?.user as any
 
-  const isSignedIn = !!user
-
-  // If using Clerk, return the user data in a format compatible with our app
-  // This maintains backward compatibility with code expecting the previous structure
-  const mappedUser = user ? {
-    id: user.id,
-    emailAddresses: user.emailAddresses,
-    firstName: user.firstName || '',
-    lastName: user.lastName || '',
-    fullName: user.fullName || '',
-    imageUrl: user.imageUrl || '',
-    publicMetadata: user.publicMetadata || { role: 'USER' }
-  } : null
+  const mappedUser = sessionUser
+    ? {
+      id: sessionUser.id || sessionUser.sub || '',
+      email: sessionUser.email,
+      name: sessionUser.name,
+      image: sessionUser.image,
+      role: sessionUser.role || 'USER',
+    }
+    : null
 
   return {
-    isLoaded,
-    isSignedIn,
-    user: mappedUser
+    isLoaded: status !== 'loading',
+    isSignedIn: status === 'authenticated',
+    user: mappedUser,
   }
 }

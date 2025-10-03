@@ -1,31 +1,19 @@
-/**
- * Sign-up page that uses Clerk's pre-built UI components
- * Clerk will handle the sign-up flow and redirect to the specified page after success
- */
-
-import { SignUp } from "@clerk/nextjs";
+"use client";
+import { signIn } from 'next-auth/react';
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-      <SignUp
-        appearance={{
-          elements: {
-            rootBox: "mx-auto w-full max-w-md",
-            card: "bg-white/10 backdrop-blur-md shadow-xl rounded-xl border border-gray-200/20",
-            headerTitle: "text-white",
-            headerSubtitle: "text-gray-300",
-            socialButtonsBlockButton: "bg-white/10 hover:bg-white/20 text-white border-none",
-            formFieldLabel: "text-gray-300",
-            formFieldInput: "bg-white/10 border-gray-600 text-white",
-            footerActionText: "text-gray-300",
-            footerActionLink: "text-blue-400 hover:text-blue-300",
-          }
-        }}
-        routing="path"
-        path="/sign-up"
-        signInUrl="/sign-in"
-      />
+    <div className="min-h-[60vh] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-xl border p-6 shadow-sm text-center">
+        <h1 className="text-xl font-semibold mb-4">Create your account</h1>
+        <p className="text-sm text-gray-600 mb-6">We use Google for sign up and sign in.</p>
+        <button
+          className="w-full rounded-md bg-blue-600 text-white py-2.5 hover:bg-blue-700"
+          onClick={() => signIn('google')}
+        >
+          Continue with Google
+        </button>
+      </div>
     </div>
   );
 }

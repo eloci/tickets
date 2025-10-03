@@ -27,13 +27,16 @@ export async function GET(request: NextRequest) {
       'Content-Type': 'application/json',
     };
 
-    // Check authentication
-    const { userId } = await auth();
-    if (!userId) {
+    // Check authentication via NextAuth
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       console.log("User not authenticated");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
     }
-    console.log("User authenticated:", userId);
+    const role = (session.user as any)?.role || 'USER'
+    if (role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers })
+    }
 
     // Connect to database
     await connectDB();
@@ -116,13 +119,16 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'application/json',
     };
 
-    // Check authentication
-    const { userId } = await auth();
-    if (!userId) {
-      console.log("User not authenticated");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
+    // Check authentication via NextAuth
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      console.log("User not authenticated")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers })
     }
-    console.log("User authenticated:", userId);
+    const role = (session.user as any)?.role || 'USER'
+    if (role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers })
+    }
 
     // Connect to database
     await connectDB();
@@ -165,7 +171,12 @@ export async function POST(request: NextRequest) {
     // Try to resolve organizer to User ObjectId (required for MongoDB schema)
     let organizerId = undefined;
     try {
-      const organizer = await User.findOne({ clerkId: userId });
+      const organizer = await User.findOne({
+        $or: [
+          { email: session.user.email },
+          { clerkId: `google:${session.user.id}` }
+        ]
+      })
       if (organizer?._id) {
         organizerId = organizer._id;
         console.log("Found user in database, using ObjectId:", organizerId);
@@ -174,7 +185,6 @@ export async function POST(request: NextRequest) {
       }
     } catch (err) {
       console.log("Error finding user:", err);
-      // Don't fall back to using clerkId directly since it's not an ObjectId
     }
 
     // Create new event - map to actual schema fields
@@ -262,13 +272,16 @@ export async function DELETE(request: NextRequest) {
       'Content-Type': 'application/json',
     };
 
-    // Check authentication
-    const { userId } = await auth();
-    if (!userId) {
-      console.log("User not authenticated");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
+    // Check authentication via NextAuth
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      console.log("User not authenticated")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers })
     }
-    console.log("User authenticated:", userId);
+    const role = (session.user as any)?.role || 'USER'
+    if (role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers })
+    }
 
     // Connect to database
     await connectDB();

@@ -1,41 +1,21 @@
 ﻿import { NextResponse } from "next/server"
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import connectDB from "@/lib/database"
 import { User, Event, Order, Ticket } from "@/lib/schemas"
 
 export async function GET() {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     await connectDB()
 
-    // For development - temporarily allow all authenticated users to access admin dashboard
-    // Or check if user is admin and create them if needed
-    let user = await User.findOne({ clerkId: userId })
-
-    if (!user) {
-      console.log('Creating new admin user for:', userId)
-      // Create user as admin for development
-      user = await User.create({
-        clerkId: userId,
-        email: 'admin@example.com', // This will be updated later
-        role: 'ADMIN'
-      })
+    // Enforce admin role
+    const dbUser = await User.findOne({ $or: [{ email: session.user.email }, { clerkId: `google:${session.user.id}` }] })
+    if (!dbUser || (dbUser.role || "USER").toUpperCase() !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
-
-    // For development, make any user admin if they're not already
-    if (user.role !== 'ADMIN') {
-      console.log('Upgrading user to admin role:', userId)
-      user.role = 'ADMIN'
-      await user.save()
-    }
-
-    console.log('Admin access granted for user:', userId)
 
     // Get current date for upcoming events calculation
     const now = new Date()

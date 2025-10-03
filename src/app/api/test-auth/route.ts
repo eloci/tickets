@@ -6,20 +6,18 @@ import { User } from "@/lib/schemas"
 
 export async function GET() {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated', userId: null })
-    }
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Not authenticated', userId: null })
 
     await connectDB()
 
     // Check current user
-    let user = await User.findOne({ clerkId: userId })
+    const authId = (session.user as any)?.id || (session.user as any)?.sub
+    let user = await User.findOne({ clerkId: `google:${authId}` })
 
     const result = {
       authenticated: true,
-      clerkUserId: userId,
+      authId: authId,
       userExistsInDB: !!user,
       userRole: user?.role || 'none',
       dbConnectionWorking: true,
@@ -28,11 +26,7 @@ export async function GET() {
 
     // If user doesn't exist, create them
     if (!user) {
-      user = await User.create({
-        clerkId: userId,
-        email: 'test@example.com',
-        role: 'ADMIN'
-      })
+      user = await User.create({ clerkId: `google:${authId}`, email: 'test@example.com', role: 'ADMIN' })
       result.userCreated = true
       result.userRole = user.role
     }

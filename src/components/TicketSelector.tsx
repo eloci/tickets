@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/use-user'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 

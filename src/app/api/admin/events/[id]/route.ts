@@ -13,11 +13,10 @@ export async function DELETE(
   const headers = { "Content-Type": "application/json" } as const;
 
   try {
-    // Auth check
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
-    }
+    // Auth check via NextAuth
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers })
+    if (((session.user as any)?.role || 'USER') !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers })
 
     // Validate id param
     const id = params?.id;
