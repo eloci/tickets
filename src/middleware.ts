@@ -1,68 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// Define public routes using Clerk helpers for clarity and maintainability
+const isPublicRoute = createRouteMatcher([
+  '/', '/about', '/contact', '/terms', '/privacy',
+  '/events', '/events/(.*)', '/past-events',
+  '/sign-in', '/sign-up',
+  // Public APIs & webhooks
+  '/api/health', '/api/events', '/api/events/(.*)',
+  '/api/webhooks(.*)', '/api/stripe/webhook', '/api/checkout/confirm',
+]);
 
-  // Define public routes that don't require authentication
-  const publicRoutes = [
-    "/",
-    "/about",
-    "/contact",
-    "/terms",
-    "/privacy",
-    "/events",
-    "/past-events",
-    "/sign-in",
-    "/sign-up",
-    "/api/health",
-    "/api/events",
-  ];
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  const { pathname, search } = req.nextUrl;
 
-  // Check if the current path is a public route
-  const isPublicRoute = publicRoutes.some(route =>
-    pathname === route ||
-    pathname.startsWith(`${route}/`) ||
-    pathname.startsWith('/api/webhooks') ||
-    pathname.startsWith('/api/stripe/webhook') ||
-    pathname.startsWith('/api/checkout/confirm') ||
-    pathname.startsWith('/events/')
-  );
-
-  // If it's a public route, allow access
-  if (isPublicRoute) {
+  // Allow public routes straight through
+  if (isPublicRoute(req)) {
     return NextResponse.next();
   }
 
-  // For protected routes, check authentication
-  try {
-    const { userId, sessionClaims } = await auth();
+  // Protect everything else
+  const { userId, sessionClaims } = await auth();
 
-    if (!userId) {
-      // Redirect to sign-in if not authenticated
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('redirect_url', pathname);
-      return NextResponse.redirect(signInUrl);
+  // If unauthenticated: APIs get 401 JSON; pages redirect to sign-in
+  if (!userId) {
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const signInUrl = new URL('/sign-in', req.url);
+    const original = pathname + (search || '');
+    signInUrl.searchParams.set('redirect_url', original);
+    return NextResponse.redirect(signInUrl);
+  }
 
-    // Check for admin role for admin routes
-    if (pathname.startsWith('/admin')) {
-      const isAdmin = sessionClaims?.metadata?.role === 'ADMIN';
-      if (!isAdmin) {
-        // Redirect non-admins away from admin routes
-        return NextResponse.redirect(new URL('/', request.url));
+  // Admin-only gate
+  if (pathname.startsWith('/admin')) {
+    // Prefer publicMetadata.role (common) and fall back to metadata.role if your JWT includes it
+    const role =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sessionClaims as any)?.publicMetadata?.role ??
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sessionClaims as any)?.metadata?.role;
+
+    if (role !== 'ADMIN') {
+      if (pathname.startsWith('/api')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
+      return NextResponse.redirect(new URL('/', req.url));
     }
-
-    // For any other protected route, just ensure the user is logged in.
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    // In case of any error, redirect to sign-in
-    return NextResponse.redirect(new URL('/sign-in', request.url));
   }
-}
+
+  return NextResponse.next();
+});
 
 export const config = {
+  // Run on all routes except static files and _next
   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };
